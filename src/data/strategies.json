@@ -1,0 +1,146 @@
+[
+  {
+    "id": "str-1",
+    "category": "Beauty",
+    "platform": "TikTok",
+    "hook": "Before / after in natural light",
+    "scriptPreview": "Hey {name} — loved your recent series on minimal routines. We’re launching a derm-tested serum and think your audience would resonate with a 7-day challenge format…",
+    "referenceLink": "https://example.com/playbooks/beauty-tiktok",
+    "createdAt": "2026-04-10"
+  },
+  {
+    "id": "str-2",
+    "category": "Fitness",
+    "platform": "Instagram",
+    "hook": "Stack breakdown + one myth",
+    "scriptPreview": "Quick note: your coaching clarity is rare. We built recovery tools for athletes — would love to send a kit, no strings, and hear if it fits your stack…",
+    "referenceLink": "https://example.com/playbooks/fitness-ig",
+    "createdAt": "2026-04-12"
+  },
+  {
+    "id": "str-3",
+    "category": "Tech",
+    "platform": "YouTube",
+    "hook": "Data from their last 90 days",
+    "scriptPreview": "Your deep dives on {topic} consistently outperform category benchmarks. We have a compact sponsor read that matches your pacing — happy to share a sample…",
+    "referenceLink": "https://example.com/playbooks/tech-yt",
+    "createdAt": "2026-04-15"
+  },
+  {
+    "id": "str-4",
+    "category": "Finance",
+    "platform": "X",
+    "hook": "Thread tie-in + contrarian angle",
+    "scriptPreview": "Saw your thread on {topic}. We’re piloting a tool for portfolio tracking — would value a 15m call if you’re exploring new sponsor categories this quarter…",
+    "referenceLink": "https://example.com/playbooks/finance-x",
+    "createdAt": "2026-04-18"
+  },
+  {
+    "id": "str-5",
+    "category": "Food",
+    "platform": "TikTok",
+    "hook": "Ingredient spotlight",
+    "scriptPreview": "Your plating tutorials are addictive. We source small-batch olive oil — thought a ‘blind taste’ episode could be fun for your audience…",
+    "referenceLink": "https://example.com/playbooks/food-tiktok",
+    "createdAt": "2026-04-20"
+  },
+  {
+    "id": "str-6",
+    "category": "Lifestyle",
+    "platform": "Instagram",
+    "hook": "Day-in-the-life fit",
+    "scriptPreview": "Your aesthetic is exactly what we had in mind for our spring line. Open to a gifted drop + optional paid reel if it feels authentic…",
+    "referenceLink": "https://example.com/playbooks/lifestyle-ig",
+    "createdAt": "2026-04-22"
+  },
+  {
+    "id": "str-ct-1",
+    "category": "Health & Hygiene",
+    "platform": "TikTok",
+    "hook": "Sanitize high-touch zones in under 60s",
+    "scriptPreview": "Open on a messy counter POV, cut to timer at 0:60, reveal product wipe-down. CTA: “link in bio for the checklist we give creators.”",
+    "referenceLink": "https://example.com/docs/health-sanitize",
+    "createdAt": "2026-05-02"
+  },
+  {
+    "id": "str-ct-2",
+    "category": "Health & Hygiene",
+    "platform": "Instagram",
+    "hook": "POV: your hands after one week on this routine",
+    "scriptPreview": "Carousel: day 1 dryness → day 7 calm skin. Voiceover keeps under 15 words per slide. End with gentle product mention + save for later.",
+    "referenceLink": "https://example.com/docs/hand-routine",
+    "createdAt": "2026-05-01"
+  },
+  {
+    "id": "str-ct-3",
+    "category": "Household",
+    "platform": "YouTube",
+    "hook": "POV: spotless sinks without the chemical smell",
+    "scriptPreview": "60s mid-roll: split screen old cleaner vs ours, highlight fume-free claim, demo single pump. Close with subscribe + pinned comment link.",
+    "referenceLink": "https://example.com/docs/household-sink",
+    "createdAt": "2026-04-28"
+  },
+  {
+    "id": "str-ct-4",
+    "category": "Household",
+    "platform": "TikTok",
+    "hook": "Laundry hack: cold water + enzyme booster",
+    "scriptPreview": "Before/after stain clip, on-screen text for dosage, myth-bust ‘hot only’ in one line. Tagline: fewer rewashes, same bright whites.",
+    "referenceLink": "https://example.com/docs/laundry-cold",
+    "createdAt": "2026-04-30"
+  },
+  {
+    "id": "str-ct-5",
+    "category": "Kitchen",
+    "platform": "Instagram",
+    "hook": "Meal prep Sunday in under 20 minutes",
+    "scriptPreview": "Reel beat sheet: fridge wide shot → three containers → final plated meal. Use on-screen timer; soft CTA to shopping list.",
+    "referenceLink": "https://example.com/docs/meal-prep-20",
+    "createdAt": "2026-05-03"
+  },
+  {
+    "id": "str-ct-6",
+    "category": "Kitchen",
+    "platform": "YouTube",
+    "hook": "Why your cutting board might be the problem",
+    "scriptPreview": "Problem/solution arc under 90s: show grooves holding moisture, swap to care routine, link to care PDF in description.",
+    "referenceLink": "https://example.com/docs/boards-101",
+    "createdAt": "2026-04-27"
+  },
+  {
+    "id": "str-ct-7",
+    "category": "Kitchen",
+    "platform": "TikTok",
+    "hook": "Glass vs plastic: what we learned",
+    "scriptPreview": "Quick hits: stain test, microwave clip, price-per-use math on screen. Keep tone journalistic, not preachy.",
+    "referenceLink": "https://example.com/docs/glass-plastic",
+    "createdAt": "2026-05-04"
+  },
+  {
+    "id": "str-ct-8",
+    "category": "Eco friendly",
+    "platform": "Instagram",
+    "hook": "Refill station tour: zero plastic routine",
+    "scriptPreview": "Story sequence: tote → dispensers → refill price reveal. Poll sticker: ‘Would you try refills?’ to boost engagement.",
+    "referenceLink": "https://example.com/docs/refill-tour",
+    "createdAt": "2026-04-29"
+  },
+  {
+    "id": "str-ct-9",
+    "category": "Eco friendly",
+    "platform": "TikTok",
+    "hook": "One sheet = fewer loads, lower footprint",
+    "scriptPreview": "Split laundry piles, count sheets on screen, tie to CO₂e estimate disclaimer. Finish with ‘dose correctly’ reminder.",
+    "referenceLink": "https://example.com/docs/eco-sheets",
+    "createdAt": "2026-04-10"
+  },
+  {
+    "id": "str-ct-10",
+    "category": "Beauty",
+    "platform": "YouTube",
+    "hook": "Three products, same glow — here’s the order",
+    "scriptPreview": "Talking head + bathroom mirror: order of operations, wait times, SPF finish. Chapters for skim viewers.",
+    "referenceLink": "https://example.com/docs/beauty-minimal",
+    "createdAt": "2026-04-26"
+  }
+]

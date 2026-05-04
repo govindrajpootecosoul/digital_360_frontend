@@ -1,0 +1,29 @@
+{
+  "kpis": [
+    { "id": "inf", "label": "Total Influencers", "value": "248", "delta": "+12%", "positive": true },
+    { "id": "col", "label": "Active Collaborations", "value": "34", "delta": "+4", "positive": true },
+    { "id": "rr", "label": "Response Rate", "value": "42%", "delta": "+3.1%", "positive": true },
+    { "id": "pub", "label": "Content Published", "value": "127", "delta": "+18", "positive": true }
+  ],
+  "growth": [
+    { "month": "Jan", "count": 180 },
+    { "month": "Feb", "count": 195 },
+    { "month": "Mar", "count": 210 },
+    { "month": "Apr", "count": 228 },
+    { "month": "May", "count": 241 },
+    { "month": "Jun", "count": 248 }
+  ],
+  "engagement": [
+    { "name": "IG", "value": 58 },
+    { "name": "TikTok", "value": 72 },
+    { "name": "YT", "value": 34 },
+    { "name": "X", "value": 22 }
+  ],
+  "activity": [
+    { "id": "1", "title": "Maya Chen replied to outreach", "meta": "TikTok · 12m ago", "type": "reply" },
+    { "id": "2", "title": "Contract signed — Jordan Lee", "meta": "Instagram · 1h ago", "type": "deal" },
+    { "id": "3", "title": "New content live: Skincare routine", "meta": "YouTube · 2h ago", "type": "content" },
+    { "id": "4", "title": "Follow-up #2 sent to Alex Rivera", "meta": "Email · 3h ago", "type": "outreach" },
+    { "id": "5", "title": "Strategy note updated: Q3 hooks", "meta": "Library · 5h ago", "type": "strategy" }
+  ]
+}

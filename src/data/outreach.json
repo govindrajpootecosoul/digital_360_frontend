@@ -1,0 +1,74 @@
+[
+  {
+    "id": "out-1",
+    "influencer": "Maya Chen",
+    "platform": "TikTok",
+    "script": "A — Soft intro",
+    "hook": "POV: your skin after one week",
+    "variant": "v2",
+    "dateSent": "2026-05-02",
+    "followUps": 1,
+    "status": "Replied",
+    "scriptPerformance": "Top"
+  },
+  {
+    "id": "out-2",
+    "influencer": "Alex Rivera",
+    "platform": "Instagram",
+    "script": "B — Value first",
+    "hook": "We built this for creators like you",
+    "variant": "v1",
+    "dateSent": "2026-04-30",
+    "followUps": 2,
+    "status": "Awaiting",
+    "scriptPerformance": "Strong"
+  },
+  {
+    "id": "out-3",
+    "influencer": "Jordan Lee",
+    "platform": "Instagram",
+    "script": "A — Soft intro",
+    "hook": "Quick question about your training stack",
+    "variant": "v3",
+    "dateSent": "2026-04-29",
+    "followUps": 0,
+    "status": "Booked",
+    "scriptPerformance": "Top"
+  },
+  {
+    "id": "out-4",
+    "influencer": "Riley Brooks",
+    "platform": "YouTube",
+    "script": "C — Data-led",
+    "hook": "Your last 3 videos averaged 400k views",
+    "variant": "v1",
+    "dateSent": "2026-04-28",
+    "followUps": 1,
+    "status": "Negotiating",
+    "scriptPerformance": "Average"
+  },
+  {
+    "id": "out-5",
+    "influencer": "Jamie Patel",
+    "platform": "YouTube",
+    "script": "B — Value first",
+    "hook": "Partnership idea for your next series",
+    "variant": "v2",
+    "dateSent": "2026-05-01",
+    "followUps": 0,
+    "status": "Sent",
+    "scriptPerformance": "Strong"
+  },
+  {
+    "id": "out-6",
+    "influencer": "Taylor Nguyen",
+    "platform": "X",
+    "script": "A — Soft intro",
+    "hook": "Noticed your thread on savings rates",
+    "variant": "v1",
+    "dateSent": "2026-04-10",
+    "followUps": 3,
+    "status": "Declined",
+    "scriptPerformance": "Weak"
+  }
+]
