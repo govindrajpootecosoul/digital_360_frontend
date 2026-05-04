@@ -5,7 +5,7 @@ Frontend-only influencer tracking dashboard (React, Vite, TypeScript, Tailwind C
 ## Routes
 
 - `/` — Dashboard (KPIs, charts, activity)
-- `/influencers` — CRM table / Kanban toggle, add modal (UI only)
+- `/Influencers Manager` — CRM table / Kanban toggle, add modal (UI only)
 - `/outreach` — Outreach table, status filter, script performance badges
 - `/content` — Content tracker: category pills, table (hook → `/strategy?hook=…`), add category/entry (localStorage)
 - `/strategy` — Strategy library grid; `?hook=` deep link from Content tracker

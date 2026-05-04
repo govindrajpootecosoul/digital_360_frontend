@@ -3,8 +3,8 @@ import { NavLink } from 'react-router-dom'
 
 const nav = [
   { to: '/', label: 'Dashboard', icon: IconHome },
-  { to: '/influencers', label: 'Influencers', icon: IconUsers },
-  { to: '/outreach', label: 'Social Cat Scrapper', icon: IconMail },
+  { to: '/influencers', label: 'Influencer Manager', icon: IconUsers },
+  { to: '/outreach', label: 'Influencer Finder', icon: IconMail },
   { to: '/content', label: 'Content Tracker', icon: IconFilm },
   { to: '/strategy', label: 'Strategy Library', icon: IconLayers },
   { to: '/settings', label: 'Settings', icon: IconSettings },

@@ -60,6 +60,7 @@ export type StrategyCard = {
   scriptPreview: string
   referenceLink: string
   createdAt: string
+  status: 'Approved' | 'Under Review' | 'WIP' | 'Rejected'
 }
 
 export type DashboardData = {

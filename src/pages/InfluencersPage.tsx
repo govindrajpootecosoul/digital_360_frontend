@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import influencersData from '../data/influencers.json'
-import { DeleteIconButton, EditIconButton } from '../components/ui/ActionIcons'
+import influencerData from '../data/influencers.json'
+import { DeleteIconButton, DownloadIconButton, EditIconButton } from '../components/ui/ActionIcons'
 import { Badge } from '../components/ui/Badge'
 import { statusTone } from '../lib/badgeTones'
 import { Card } from '../components/ui/Card'
@@ -12,9 +12,10 @@ import { Table, type TableColumn } from '../components/ui/Table'
 import { PageToolbar, ToolbarSelect } from '../components/layout/PageToolbar'
 import { INFLUENCER_KANBAN_COLUMNS } from '../constants/kanban'
 import { formatFollowers } from '../lib/format'
+import { downloadCsv } from '../lib/csvDownload'
 import type { Influencer } from '../types/data'
 
-const seedRows = influencersData as Influencer[]
+const seedRows = influencerData as Influencer[]
 
 const platforms = ['All', ...Array.from(new Set(seedRows.map((r) => r.platform)))]
 const categories = ['All', ...Array.from(new Set(seedRows.map((r) => r.category)))]
@@ -89,7 +90,7 @@ export function InfluencersPage() {
   return (
     <div>
       <PageToolbar
-        title="Influencers"
+        title="Influencer Manager"
         subtitle="CRM — table and board views with shared filters."
         searchValue={search}
         onSearchChange={setSearch}
@@ -111,6 +112,37 @@ export function InfluencersPage() {
         }
         actions={
           <div className="flex flex-wrap items-end gap-2">
+            <DownloadIconButton
+              aria-label="Download influencer manager CSV"
+              onClick={() => {
+                downloadCsv({
+                  filename: `influencer-manager-${new Date().toISOString().slice(0, 10)}.csv`,
+                  headers: [
+                    'id',
+                    'name',
+                    'platform',
+                    'category',
+                    'country',
+                    'creatorLink',
+                    'productAsked',
+                    'compensation',
+                    'address',
+                    'contentType',
+                    'shipmentId',
+                    'trackingLink',
+                    'shipmentStatus',
+                    'assetLink',
+                    'paymentDetails',
+                    'followers',
+                    'status',
+                    'collaborationType',
+                    'lastContact',
+                    'kanbanStatus',
+                  ],
+                  rows: filtered,
+                })
+              }}
+            />
             <div className="flex rounded-xl border border-neutral-200 bg-white p-0.5 shadow-sm">
               <button
                 type="button"

@@ -5,6 +5,7 @@ import type { StrategyCard } from '../types/data'
 import { StrategyLibraryContext } from './strategyLibraryContext'
 
 const STORAGE_KEY = 'influra-strategy-library-v1'
+const DEFAULT_STATUS: StrategyCard['status'] = 'WIP'
 
 function newId(): string {
   const c = globalThis.crypto
@@ -23,6 +24,12 @@ function normalizeCreatedAt(raw?: string): string {
   return todayIso()
 }
 
+function normalizeStatus(raw?: string): StrategyCard['status'] {
+  const v = (raw ?? '').trim()
+  if (v === 'Approved' || v === 'Under Review' || v === 'WIP' || v === 'Rejected') return v
+  return DEFAULT_STATUS
+}
+
 function loadStrategies(): StrategyCard[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -30,6 +37,7 @@ function loadStrategies(): StrategyCard[] {
       return (seed as StrategyCard[]).map((s) => ({
         ...s,
         createdAt: normalizeCreatedAt((s as unknown as { createdAt?: string }).createdAt),
+        status: normalizeStatus((s as unknown as { status?: string }).status),
       }))
     }
     const parsed = JSON.parse(raw) as unknown
@@ -37,6 +45,7 @@ function loadStrategies(): StrategyCard[] {
       return (parsed as StrategyCard[]).map((s) => ({
         ...s,
         createdAt: normalizeCreatedAt((s as unknown as { createdAt?: string }).createdAt),
+        status: normalizeStatus((s as unknown as { status?: string }).status),
       }))
     }
   } catch {
@@ -45,6 +54,7 @@ function loadStrategies(): StrategyCard[] {
   return (seed as StrategyCard[]).map((s) => ({
     ...s,
     createdAt: normalizeCreatedAt((s as unknown as { createdAt?: string }).createdAt),
+    status: normalizeStatus((s as unknown as { status?: string }).status),
   }))
 }
 
@@ -56,12 +66,17 @@ export function StrategyLibraryProvider({ children }: { children: ReactNode }) {
   }, [strategies])
 
   const addStrategy = useCallback((s: Omit<StrategyCard, 'id' | 'createdAt'>) => {
-    setStrategies((prev) => [...prev, { ...s, id: newId(), createdAt: todayIso() }])
+    setStrategies((prev) => [
+      ...prev,
+      { ...s, status: s.status ?? DEFAULT_STATUS, id: newId(), createdAt: todayIso() },
+    ])
   }, [])
 
   const updateStrategy = useCallback((id: string, s: Omit<StrategyCard, 'id' | 'createdAt'>) => {
     setStrategies((prev) =>
-      prev.map((x) => (x.id === id ? { ...s, id, createdAt: x.createdAt } : x)),
+      prev.map((x) =>
+        x.id === id ? { ...s, id, createdAt: x.createdAt, status: s.status ?? x.status ?? DEFAULT_STATUS } : x,
+      ),
     )
   }, [])
 

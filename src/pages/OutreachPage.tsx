@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import influencersCsv from '../../instagram_influencers.csv?raw'
 import { PageToolbar } from '../components/layout/PageToolbar'
 import { Table, type TableColumn } from '../components/ui/Table'
+import { DownloadIconButton } from '../components/ui/ActionIcons'
+import { downloadCsv } from '../lib/csvDownload'
 
 const LEDGER_PAGE_SIZE = 50
 
@@ -160,11 +162,45 @@ export function OutreachPage() {
   return (
     <div>
       <PageToolbar
-        title="Social Cat Scrapper"
+        title="Influencer Finder"
         subtitle="Find influencers by country/category and follower range."
         showSearch={false}
         searchValue=""
         onSearchChange={() => {}}
+        actions={
+          <DownloadIconButton
+            aria-label="Download influencers CSV"
+            onClick={() => {
+              const rowsToExport = appliedQuery ? influencerResults : influencers
+              downloadCsv({
+                filename: `influencer-finder-${new Date().toISOString().slice(0, 10)}.csv`,
+                headers: [
+                  'username',
+                  'fullName',
+                  'followerCount',
+                  'followingCount',
+                  'mediaCount',
+                  'engagementRate',
+                  'influencerTier',
+                  'influencerScore',
+                  'isVerified',
+                  'category',
+                  'age',
+                  'ethnicity',
+                  'gender',
+                  'city',
+                  'state',
+                  'country',
+                  'biography',
+                  'externalUrl',
+                  'keywords',
+                  'analysis',
+                ],
+                rows: rowsToExport,
+              })
+            }}
+          />
+        }
       />
 
       <section className="mb-8 rounded-2xl border border-neutral-200/80 bg-white p-4 shadow-sm">

@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { DeleteIconButton, EditIconButton } from '../components/ui/ActionIcons'
+import { DeleteIconButton, DownloadIconButton, EditIconButton } from '../components/ui/ActionIcons'
 import { PlatformIcon } from '../components/ui/PlatformIcon'
 import { useContentTracker } from '../hooks/useContentTracker'
 import { Card, CardHeader } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
 import { SidePanel } from '../components/ui/SidePanel'
-import { PageToolbar } from '../components/layout/PageToolbar'
+import { PageToolbar, ToolbarSelect } from '../components/layout/PageToolbar'
 import { Table, type TableColumn } from '../components/ui/Table'
 import { formatNumber } from '../lib/format'
+import { downloadCsv } from '../lib/csvDownload'
 import type { ContentTrackerEntry } from '../types/contentTracker'
 
 const ALL = 'all'
@@ -25,102 +26,136 @@ export function ContentTrackerPage() {
   const { categories, entries, addCategory, addEntry, updateEntry, deleteEntry } = useContentTracker()
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(ALL)
   const [search, setSearch] = useState('')
+  const [country, setCountry] = useState<string>(ALL)
+  const [platform, setPlatform] = useState<string>(ALL)
+  const [subCategory, setSubCategory] = useState<string>(ALL)
   const [catModalOpen, setCatModalOpen] = useState(false)
   const [entryDialog, setEntryDialog] = useState<EntryDialog>(null)
   const [deletingEntry, setDeletingEntry] = useState<ContentTrackerEntry | null>(null)
   const [activeRow, setActiveRow] = useState<ContentTrackerEntry | null>(null)
   const [newCatName, setNewCatName] = useState('')
 
+  const bySelectedCategory = useMemo(() => {
+    return selectedCategoryId === ALL ? entries : entries.filter((e) => e.categoryId === selectedCategoryId)
+  }, [entries, selectedCategoryId])
+
+  const countryOptions = useMemo(() => {
+    const opts = Array.from(new Set(bySelectedCategory.map((e) => e.country).filter(Boolean))).sort()
+    return [ALL, ...opts]
+  }, [bySelectedCategory])
+
+  const platformOptions = useMemo(() => {
+    const opts = Array.from(new Set(bySelectedCategory.map((e) => e.platform).filter(Boolean))).sort()
+    return [ALL, ...opts]
+  }, [bySelectedCategory])
+
+  const subCategoryOptions = useMemo(() => {
+    const opts = Array.from(new Set(bySelectedCategory.map((e) => e.subCategory).filter(Boolean))).sort()
+    return [ALL, ...opts]
+  }, [bySelectedCategory])
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    const byCat =
-      selectedCategoryId === ALL
-        ? entries
-        : entries.filter((e) => e.categoryId === selectedCategoryId)
-    if (!q) return byCat
-    return byCat.filter(
+    const byFilters = bySelectedCategory.filter((e) => {
+      const okCountry = country === ALL || e.country === country
+      const okPlatform = platform === ALL || e.platform === platform
+      const okSub = subCategory === ALL || e.subCategory === subCategory
+      return okCountry && okPlatform && okSub
+    })
+
+    if (!q) return byFilters
+    return byFilters.filter(
       (e) =>
         e.subCategory.toLowerCase().includes(q) ||
         e.country.toLowerCase().includes(q) ||
         e.campaignTheme.toLowerCase().includes(q) ||
+        e.idea.toLowerCase().includes(q) ||
         e.contentType.toLowerCase().includes(q) ||
-        e.designerName.toLowerCase().includes(q) ||
-        e.designerStatus.toLowerCase().includes(q) ||
         e.topic.toLowerCase().includes(q) ||
         e.hook.toLowerCase().includes(q) ||
         e.scripts.toLowerCase().includes(q) ||
         e.platform.toLowerCase().includes(q),
     )
-  }, [entries, selectedCategoryId, search])
+  }, [bySelectedCategory, country, platform, subCategory, search])
 
   const defaultEntryCategoryId =
     selectedCategoryId === ALL ? categories[0]?.id ?? '' : selectedCategoryId
 
   const columns: TableColumn<ContentTrackerEntry>[] = useMemo(
     () => [
-    {
-      id: 'sub',
-      header: 'Sub category',
-      cell: (r) => <span className="font-medium text-neutral-900">{r.subCategory}</span>,
-    },
-    { id: 'country', header: 'Country', cell: (r) => <span className="text-neutral-700">{r.country}</span> },
-    { id: 'plat', header: 'Platform', cell: (r) => <PlatformIcon platform={r.platform} /> },
-    { id: 'topic', header: 'Topic', cell: (r) => <span className="max-w-[200px] truncate">{r.topic}</span> },
-    { id: 'scripts', header: 'Scripts', cell: (r) => <span className="max-w-[180px] truncate text-neutral-600">{r.scripts}</span> },
-    {
-      id: 'hook',
-      header: 'Hook',
-      cell: (r) => (
-        <Link
-          to={strategyUrlForHook(r.hook)}
-          className="max-w-[min(100vw,280px)] text-left text-sm font-medium text-[var(--color-accent)] underline-offset-2 transition hover:underline"
-        >
-          {r.hook}
-        </Link>
-      ),
-    },
-    {
-      id: 'ref',
-      header: 'Reference link',
-      cell: (r) => (
-        <a
-          href={r.referenceLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-sm text-neutral-700 underline-offset-2 hover:text-neutral-900 hover:underline"
-        >
-          Open
-          <span className="text-neutral-400" aria-hidden>
-            ↗
-          </span>
-        </a>
-      ),
-    },
-    { id: 'views', header: 'Views', cell: (r) => <span className="tabular-nums">{formatNumber(r.views)}</span> },
-    { id: 'likes', header: 'Likes', cell: (r) => <span className="tabular-nums">{formatNumber(r.likes)}</span> },
-    {
-      id: 'comments',
-      header: 'Comments',
-      cell: (r) => <span className="tabular-nums">{formatNumber(r.comments)}</span>,
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      className: 'w-[1%] whitespace-nowrap',
-      cell: (r) => (
-        <div className="flex justify-end gap-0.5">
-          <EditIconButton
-            aria-label={`Edit entry: ${r.hook}`}
-            onClick={() => setEntryDialog(r)}
-          />
-          <DeleteIconButton
-            aria-label={`Delete entry: ${r.hook}`}
-            onClick={() => setDeletingEntry(r)}
-          />
-        </div>
-      ),
-    },
-  ],
+      { id: 'plat', header: 'Platform', cell: (r) => <PlatformIcon platform={r.platform} /> },
+      { id: 'product', header: 'Product', cell: (r) => <span className="max-w-[180px] truncate">{r.campaignTheme}</span> },
+      { id: 'idea', header: 'Idea', cell: (r) => <span className="max-w-[220px] truncate font-medium text-neutral-900">{r.idea}</span> },
+      { id: 'type', header: 'Content Type', cell: (r) => <span className="text-neutral-700">{r.contentType}</span> },
+      {
+        id: 'hookTopic',
+        header: 'Hook Topic',
+        cell: (r) => (
+          <Link
+            to={strategyUrlForHook(r.hook)}
+            className="max-w-[min(100vw,280px)] text-left text-sm font-medium text-[var(--color-accent)] underline-offset-2 transition hover:underline"
+          >
+            {r.hook}
+          </Link>
+        ),
+      },
+      { id: 'scripts', header: 'Scripts', cell: (r) => <span className="max-w-[220px] truncate text-neutral-600">{r.scripts}</span> },
+      { id: 'date', header: 'Posted Date', cell: (r) => <span className="tabular-nums text-neutral-700">{r.date}</span> },
+      { id: 'day', header: 'Day', cell: (r) => <span className="text-neutral-700">{r.day}</span> },
+      {
+        id: 'postLink',
+        header: 'Post Link',
+        cell: (r) =>
+          r.referenceLink ? (
+            <a
+              href={r.referenceLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-neutral-700 underline-offset-2 hover:text-neutral-900 hover:underline"
+            >
+              Open
+              <span className="text-neutral-400" aria-hidden>
+                ↗
+              </span>
+            </a>
+          ) : (
+            '—'
+          ),
+      },
+      {
+        id: 'ref',
+        header: 'Reference Link',
+        cell: (r) =>
+          r.referenceLink ? (
+            <a
+              href={r.referenceLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-neutral-700 underline-offset-2 hover:text-neutral-900 hover:underline"
+            >
+              Open
+              <span className="text-neutral-400" aria-hidden>
+                ↗
+              </span>
+            </a>
+          ) : (
+            '—'
+          ),
+      },
+      { id: 'views', header: 'Views', cell: (r) => <span className="tabular-nums">{formatNumber(r.views)}</span> },
+      { id: 'likes', header: 'Like', cell: (r) => <span className="tabular-nums">{formatNumber(r.likes)}</span> },
+      {
+        id: 'actions',
+        header: 'Actions',
+        className: 'w-[1%] whitespace-nowrap',
+        cell: (r) => (
+          <div className="flex justify-end gap-0.5">
+            <EditIconButton aria-label={`Edit entry: ${r.hook}`} onClick={() => setEntryDialog(r)} />
+            <DeleteIconButton aria-label={`Delete entry: ${r.hook}`} onClick={() => setDeletingEntry(r)} />
+          </div>
+        ),
+      },
+    ],
     [],
   )
 
@@ -136,6 +171,61 @@ export function ContentTrackerPage() {
         subtitle="Filter by category, then open a hook in Strategy library to manage its script."
         searchValue={search}
         onSearchChange={setSearch}
+        filters={
+          <>
+            <ToolbarSelect
+              label="Country"
+              value={country}
+              onChange={setCountry}
+              options={countryOptions.map((c) => ({ value: c, label: c === ALL ? 'All' : c }))}
+            />
+            <ToolbarSelect
+              label="Platform"
+              value={platform}
+              onChange={setPlatform}
+              options={platformOptions.map((p) => ({ value: p, label: p === ALL ? 'All' : p }))}
+            />
+            <ToolbarSelect
+              label="Sub category"
+              value={subCategory}
+              onChange={setSubCategory}
+              options={subCategoryOptions.map((s) => ({ value: s, label: s === ALL ? 'All' : s }))}
+            />
+          </>
+        }
+        actions={
+          <DownloadIconButton
+            aria-label="Download content tracker CSV"
+            onClick={() => {
+              downloadCsv({
+                filename: `content-tracker-${new Date().toISOString().slice(0, 10)}.csv`,
+                headers: [
+                  'id',
+                  'categoryId',
+                  'subCategory',
+                  'country',
+                  'date',
+                  'day',
+                  'contentType',
+                  'campaignTheme',
+                  'idea',
+                  'copy',
+                  'designerName',
+                  'designerStatus',
+                  'platform',
+                  'topic',
+                  'scripts',
+                  'hook',
+                  'referenceLink',
+                  'views',
+                  'likes',
+                  'comments',
+                ],
+                rows: filtered,
+              })
+            }}
+          />
+        }
       />
 
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
