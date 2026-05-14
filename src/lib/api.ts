@@ -5,10 +5,17 @@
  * - Value must end with `/api` (no trailing slash after `api`).
  */
 const envBase = (import.meta.env.VITE_API_URL as string | undefined)?.trim()?.replace(/\/$/, '')
-if (!envBase && !import.meta.env.DEV) {
-  throw new Error('VITE_API_URL is missing in .env — set it to your API base (e.g. https://your-api.example.com/api).')
+
+function apiBase(): string {
+  if (envBase) return envBase
+  if (import.meta.env.DEV) return '/api'
+  throw new Error(
+    'VITE_API_URL is not set for this production build. In Vercel: Project → Settings → Environment Variables → add VITE_API_URL (full URL ending in /api, e.g. https://api.example.com/api), then redeploy.',
+  )
 }
-export const API_BASE = envBase || '/api'
+
+/** Resolved API origin; in dev without .env this is `/api` (Vite proxy). */
+export const API_BASE = envBase || (import.meta.env.DEV ? '/api' : '')
 
 async function readErrorBody(res: Response): Promise<string> {
   const t = await res.text().catch(() => '')
@@ -28,7 +35,7 @@ function networkError(err: unknown, method: string, path: string): Error {
 export async function apiGet<T>(path: string): Promise<T> {
   let res: Response
   try {
-    res = await fetch(`${API_BASE}${path}`, { method: 'GET' })
+    res = await fetch(`${apiBase()}${path}`, { method: 'GET' })
   } catch (e) {
     throw networkError(e, 'GET', path)
   }
@@ -39,7 +46,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   let res: Response
   try {
-    res = await fetch(`${API_BASE}${path}`, {
+    res = await fetch(`${apiBase()}${path}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
@@ -57,7 +64,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   let res: Response
   try {
-    res = await fetch(`${API_BASE}${path}`, {
+    res = await fetch(`${apiBase()}${path}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
@@ -75,7 +82,7 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
 export async function apiDelete(path: string): Promise<void> {
   let res: Response
   try {
-    res = await fetch(`${API_BASE}${path}`, { method: 'DELETE' })
+    res = await fetch(`${apiBase()}${path}`, { method: 'DELETE' })
   } catch (e) {
     throw networkError(e, 'DELETE', path)
   }

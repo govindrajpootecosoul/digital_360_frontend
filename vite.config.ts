@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const rawApi = env.VITE_API_URL?.trim()
   const apiUrl = rawApi && rawApi.length > 0 ? rawApi : '/api'
@@ -20,7 +20,8 @@ export default defineConfig(({ mode }) => {
         }
       : undefined
 
-  if (useRelativeApi && !proxyTarget) {
+  // Proxy is dev-server only; do not fail `vite build` on Vercel/CI where .env is absent.
+  if (command === 'serve' && useRelativeApi && !proxyTarget) {
     throw new Error(
       'When VITE_API_URL is /api, set API_PROXY_TARGET in .env to your backend origin (e.g. http://localhost:4100). See .env.example.',
     )
