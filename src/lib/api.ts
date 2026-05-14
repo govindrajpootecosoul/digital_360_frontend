@@ -28,11 +28,6 @@ function mergeHeaders(extra?: HeadersInit): HeadersInit {
   return { ...authHeaders(), ...extra }
 }
 
-async function readErrorBody(res: Response): Promise<string> {
-  const t = await res.text().catch(() => '')
-  return t.length > 200 ? `${t.slice(0, 200)}…` : t
-}
-
 /** Prefer API `message` field when present (e.g. auth validation). */
 async function errorDetail(res: Response): Promise<string> {
   const t = await res.text().catch(() => '')
