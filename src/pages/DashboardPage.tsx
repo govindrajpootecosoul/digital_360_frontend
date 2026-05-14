@@ -60,7 +60,7 @@ export function DashboardPage() {
       <header className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Dashboard</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Pipeline health, growth, and the latest moves across Influra.
+          Pipeline health, growth, and the latest moves across Digital 360.
         </p>
       </header>
 

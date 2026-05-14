@@ -1,19 +1,19 @@
-# Influra — project overview
+# Digital 360 — project overview
 
-Frontend-only influencer tracking dashboard (React, Vite, TypeScript, Tailwind CSS v4, Recharts). Brand: **Influra**. Static mock data lives in `src/data/*.json`. No backend or authentication.
+Influencer tracking dashboard (React, Vite, TypeScript, Tailwind CSS v4, Recharts). Brand: **Digital 360**. Seed and static reference data in `src/data/*.json`. Content, strategies, and related records load from the Fastify API (`src/lib/api.ts`).
 
 ## Routes
 
 - `/` — Dashboard (KPIs, charts, activity)
-- `/Influencers Manager` — CRM table / Kanban toggle, add modal (UI only)
-- `/outreach` — Outreach table, status filter, script performance badges
-- `/content` — Content tracker: category pills, table (hook → `/strategy?hook=…`), add category/entry (localStorage)
+- `/influencers` — CRM table / Kanban toggle, add modal
+- `/outreach` — Influencer finder by country/category and follower range
+- `/content` — Content tracker: category pills, table (hook → `/strategy?hook=…`), add category/entry
 - `/strategy` — Strategy library grid; `?hook=` deep link from Content tracker
 - `/settings` — Edit/delete content tracker categories
 
 ## Content tracker data
 
-Seed: `src/data/contentTracker.json`. Runtime edits persist in `localStorage` key `influra-content-tracker-v1`. Context: `ContentTrackerProvider` + `useContentTracker()`.
+Seed: `src/data/contentTracker.json`. Runtime data from API (`ContentTrackerProvider` + `useContentTracker()`).
 
 ## Key components
 

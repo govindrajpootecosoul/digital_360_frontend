@@ -211,7 +211,7 @@ export function OutreachPage() {
               value={country}
               onChange={setCountry}
               placeholder="Type to search…"
-              listId="influra-country-list"
+              listId="digital360-country-list"
               options={countries}
             />
             <SearchableField
@@ -219,7 +219,7 @@ export function OutreachPage() {
               value={category}
               onChange={setCategory}
               placeholder="Type to search…"
-              listId="influra-category-list"
+              listId="digital360-category-list"
               options={categories}
             />
             <InlineField label="Min influencer" value={minFollowers} onChange={setMinFollowers} placeholder="e.g. 100000" />

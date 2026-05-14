@@ -26,11 +26,11 @@ export function Sidebar({
       <div className={`flex h-14 items-center border-b border-neutral-100 ${collapsed ? 'justify-center px-2' : 'px-4'}`}>
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white ring-1 ring-neutral-200 shadow-sm">
-            <img src="/influra-logo.png" alt="Influra logo" className="h-full w-full object-contain" />
+            <img src="/influra-logo.png" alt="Digital 360 logo" className="h-full w-full object-contain" />
           </div>
           {!collapsed ? (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold tracking-tight text-neutral-900">Influra</p>
+              <p className="truncate text-sm font-semibold tracking-tight text-neutral-900">Digital 360</p>
               <p className="truncate text-[11px] text-neutral-500">Influencer OS</p>
             </div>
           ) : null}
