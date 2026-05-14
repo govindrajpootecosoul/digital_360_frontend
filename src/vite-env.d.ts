@@ -1,8 +1,10 @@
 /// <reference types="vite/client" />
 
+/** Injected by Vite from `API_PROXY_TARGET` — dev: `/api`, prod: `${API_PROXY_TARGET}/api`. */
+declare const __API_BASE__: string
+
 interface ImportMetaEnv {
-  /** API base including `/api`, e.g. `/api` or `http://localhost:4100/api` */
-  readonly VITE_API_URL?: string
+  readonly [key: string]: string | undefined
 }
 
 interface ImportMeta {

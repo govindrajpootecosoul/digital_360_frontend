@@ -1,23 +1,16 @@
 import { getAccessToken } from './authStorage'
 
 /**
- * Base URL for `fetch` — set `VITE_API_URL` in `.env` (see `.env.example`).
- * - Dev: `/api` + `API_PROXY_TARGET` in `.env` uses the Vite proxy (no hardcoded host in code).
- * - Or set full URL, e.g. `http://127.0.0.1:4100/api` (whatever URL the backend prints).
- * - Value must end with `/api` (no trailing slash after `api`).
+ * API base for `fetch` — set at build/dev time from `API_PROXY_TARGET` in `.env` (see `.env.example`).
+ * - Dev: `/api` (Vite proxies to `API_PROXY_TARGET`).
+ * - Production: `${API_PROXY_TARGET}/api` (baked in when you run `vite build`).
  */
-const envBase = (import.meta.env.VITE_API_URL as string | undefined)?.trim()?.replace(/\/$/, '')
 
 function apiBase(): string {
-  if (envBase) return envBase
-  if (import.meta.env.DEV) return '/api'
-  throw new Error(
-    'VITE_API_URL is not set for this production build. In Vercel: Project → Settings → Environment Variables → add VITE_API_URL (full URL ending in /api, e.g. https://api.example.com/api), then redeploy.',
-  )
+  return __API_BASE__
 }
 
-/** Resolved API origin; in dev without .env this is `/api` (Vite proxy). */
-export const API_BASE = envBase || (import.meta.env.DEV ? '/api' : '')
+export const API_BASE = __API_BASE__
 
 function authHeaders(): HeadersInit {
   const token = getAccessToken()
@@ -44,7 +37,7 @@ function networkError(err: unknown, method: string, path: string): Error {
   const msg = err instanceof Error ? err.message : String(err)
   if (msg === 'Failed to fetch' || err instanceof TypeError) {
     return new Error(
-      `Could not reach the API (${method} ${path}). Check VITE_API_URL and that the backend is running; after .env changes restart Vite.`,
+      `Could not reach the API (${method} ${path}). Check API_PROXY_TARGET and that the backend is running; after .env changes restart Vite.`,
     )
   }
   return err instanceof Error ? err : new Error(msg)

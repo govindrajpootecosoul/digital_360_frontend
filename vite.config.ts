@@ -3,35 +3,43 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ command, mode, isPreview }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const rawApi = env.VITE_API_URL?.trim()
-  const apiUrl = rawApi && rawApi.length > 0 ? rawApi : '/api'
-  const proxyTarget = (env.API_PROXY_TARGET ?? '').trim()
+  const proxyTarget = (env.API_PROXY_TARGET ?? '').trim().replace(/\/$/, '')
 
-  const useRelativeApi = apiUrl === '/api' || apiUrl.startsWith('/api/')
-  const proxy =
-    useRelativeApi && proxyTarget
-      ? {
-          '/api': {
-            target: proxyTarget.replace(/\/$/, ''),
-            changeOrigin: true,
-          },
-        }
-      : undefined
+  const isDevServer = command === 'serve' && !isPreview
 
-  // Proxy is dev-server only; do not fail `vite build` on Vercel/CI where .env is absent.
-  if (command === 'serve' && useRelativeApi && !proxyTarget) {
+  if (isDevServer && !proxyTarget) {
     throw new Error(
-      'When VITE_API_URL is /api, set API_PROXY_TARGET in .env to your backend origin (e.g. http://localhost:4100). See .env.example.',
+      'Set API_PROXY_TARGET in .env to your backend origin (e.g. http://localhost:4100 or https://api.example.com/path). See .env.example.',
     )
   }
 
+  if (command === 'build' && !proxyTarget) {
+    throw new Error(
+      'Set API_PROXY_TARGET for production builds (e.g. in Vercel Environment Variables). See .env.example.',
+    )
+  }
+
+  /** Dev: same-origin `/api` via proxy. Production: full `${API_PROXY_TARGET}/api`. */
+  const apiBase = command === 'build' ? `${proxyTarget}/api` : '/api'
+
   return {
+    define: {
+      __API_BASE__: JSON.stringify(apiBase),
+    },
     plugins: [react(), tailwindcss()],
     server: {
-      // Same-origin `/api` in dev avoids CORS when the API runs on another port; target comes from .env only.
-      ...(proxy ? { proxy } : {}),
+      ...(isDevServer && proxyTarget
+        ? {
+            proxy: {
+              '/api': {
+                target: proxyTarget,
+                changeOrigin: true,
+              },
+            },
+          }
+        : {}),
     },
   }
 })
