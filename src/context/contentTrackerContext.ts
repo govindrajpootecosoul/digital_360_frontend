@@ -2,9 +2,10 @@ import { createContext } from 'react'
 import type { ContentTrackerEntry, ContentTrackerSeed } from '../types/contentTracker'
 
 export type ContentTrackerContextValue = ContentTrackerSeed & {
-  addCategory: (name: string) => void
-  updateCategory: (id: string, name: string) => void
-  deleteCategory: (id: string) => void
+  loading: boolean
+  addCategory: (name: string) => Promise<void>
+  updateCategory: (id: string, name: string) => Promise<void>
+  deleteCategory: (id: string) => Promise<void>
   addEntry: (entry: Omit<ContentTrackerEntry, 'id'>) => void
   updateEntry: (id: string, entry: Omit<ContentTrackerEntry, 'id'>) => void
   deleteEntry: (id: string) => void

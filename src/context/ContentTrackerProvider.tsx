@@ -1,96 +1,136 @@
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import seed from '../data/contentTracker.json'
-import type {
-  ContentCategory,
-  ContentTrackerEntry,
-  ContentTrackerSeed,
-} from '../types/contentTracker'
+import type { ContentCategory, ContentTrackerEntry } from '../types/contentTracker'
 import { ContentTrackerContext } from './contentTrackerContext'
+import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api'
 
-const STORAGE_KEY = 'influra-content-tracker-v1'
+type ListResponse<T> = { items: T[] }
 
-function newId(prefix: string): string {
-  const c = globalThis.crypto
-  if (c?.randomUUID) return `${prefix}-${c.randomUUID()}`
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-}
-
-function readSeed(): ContentTrackerSeed {
-  return seed as ContentTrackerSeed
-}
-
-function loadPayload(): ContentTrackerSeed {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return readSeed()
-    const parsed = JSON.parse(raw) as ContentTrackerSeed
-    if (
-      Array.isArray(parsed.categories) &&
-      Array.isArray(parsed.entries) &&
-      parsed.categories.length > 0
-    ) {
-      return {
-        categories: parsed.categories,
-        entries: parsed.entries.map((e) => ({
-          ...e,
-          date: (e as unknown as { date?: string }).date ?? '—',
-          day: (e as unknown as { day?: string }).day ?? '—',
-          contentType: (e as unknown as { contentType?: string }).contentType ?? '—',
-          campaignTheme: (e as unknown as { campaignTheme?: string }).campaignTheme ?? '—',
-          idea: (e as unknown as { idea?: string }).idea ?? '—',
-          copy: (e as unknown as { copy?: string }).copy ?? '—',
-          designerName: (e as unknown as { designerName?: string }).designerName ?? '—',
-          designerStatus: (e as unknown as { designerStatus?: string }).designerStatus ?? '—',
-        })),
-      }
-    }
-  } catch {
-    /* ignore */
-  }
-  return readSeed()
+function categoryIdFromApi(row: { id?: unknown; _id?: unknown }): string {
+  if (row.id != null && String(row.id).trim() !== '') return String(row.id)
+  if (row._id != null && String(row._id).trim() !== '') return String(row._id)
+  return ''
 }
 
 export function ContentTrackerProvider({ children }: { children: ReactNode }) {
-  const [categories, setCategories] = useState<ContentCategory[]>(() => loadPayload().categories)
-  const [entries, setEntries] = useState<ContentTrackerEntry[]>(() => loadPayload().entries)
+  const [loading, setLoading] = useState(true)
+  const [categories, setCategories] = useState<ContentCategory[]>([])
+  const [entries, setEntries] = useState<ContentTrackerEntry[]>([])
 
   useEffect(() => {
-    const payload: ContentTrackerSeed = { categories, entries }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
-  }, [categories, entries])
-
-  const addCategory = useCallback((name: string) => {
-    const trimmed = name.trim()
-    if (!trimmed) return
-    setCategories((prev) => [...prev, { id: newId('cat'), name: trimmed }])
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      try {
+        const [cats, recs] = await Promise.all([
+          apiGet<ListResponse<{ id: string; name: string }>>('/content/categories'),
+          apiGet<ListResponse<any>>('/records?limit=200'),
+        ])
+        if (cancelled) return
+        setCategories(
+          cats.items
+            .map((c) => {
+              const id = categoryIdFromApi(c as { id?: unknown; _id?: unknown })
+              const name = typeof (c as { name?: unknown }).name === 'string' ? (c as { name: string }).name : ''
+              return id && name ? { id, name } : null
+            })
+            .filter((c): c is ContentCategory => c != null),
+        )
+        setEntries(
+          recs.items.map((r) => ({
+            id: r.id ?? String(r._id),
+            categoryId: r.categoryId,
+            subCategory: r.subCategory,
+            country: r.country,
+            date: r.date,
+            day: r.day,
+            contentType: r.contentType,
+            campaignTheme: r.campaignTheme,
+            idea: r.idea,
+            copy: r.copy,
+            designerName: r.designerName,
+            designerStatus: r.designerStatus,
+            platform: r.platform,
+            topic: r.topic,
+            scripts: r.scripts,
+            hook: r.hook,
+            isOwn: Boolean(r.isOwn),
+            postLink: r.postLink,
+            referenceLink: r.referenceLink,
+            views: r.views ?? 0,
+            likes: r.likes ?? 0,
+            comments: r.comments != null ? String(r.comments) : '0',
+          })) satisfies ContentTrackerEntry[],
+        )
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  const updateCategory = useCallback((id: string, name: string) => {
+  const addCategory = useCallback((name: string): Promise<void> => {
     const trimmed = name.trim()
-    if (!trimmed) return
-    setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: trimmed } : c)))
+    if (!trimmed) return Promise.resolve()
+    return (async () => {
+      const created = await apiPost<any>('/content/categories', { name: trimmed })
+      const id = categoryIdFromApi(created)
+      if (!id) return
+      const nextName = typeof created?.name === 'string' && created.name.trim() ? created.name.trim() : trimmed
+      setCategories((prev) => [...prev, { id, name: nextName }])
+    })()
   }, [])
 
-  const deleteCategory = useCallback((id: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id))
-    setEntries((prev) => prev.filter((e) => e.categoryId !== id))
+  const updateCategory = useCallback((id: string, name: string): Promise<void> => {
+    const trimmed = name.trim()
+    if (!trimmed) return Promise.resolve()
+    const safeId = encodeURIComponent(id)
+    return (async () => {
+      const updated = await apiPatch<any>(`/content/categories/${safeId}`, { name: trimmed })
+      const nextId = categoryIdFromApi(updated) || id
+      const nextName = typeof updated?.name === 'string' && updated.name.trim() ? updated.name.trim() : trimmed
+      setCategories((prev) => prev.map((c) => (c.id === id ? { id: nextId, name: nextName } : c)))
+    })()
+  }, [])
+
+  const deleteCategory = useCallback((id: string): Promise<void> => {
+    const cid = id?.trim()
+    if (!cid) return Promise.resolve()
+    const safeId = encodeURIComponent(cid)
+    return (async () => {
+      await apiDelete(`/content/categories/${safeId}`)
+      setCategories((prev) => prev.filter((c) => c.id !== cid))
+      setEntries((prev) => prev.filter((e) => e.categoryId !== cid))
+    })()
   }, [])
 
   const addEntry = useCallback((entry: Omit<ContentTrackerEntry, 'id'>) => {
-    setEntries((prev) => [...prev, { ...entry, id: newId('ent') }])
+    ;(async () => {
+      const created = await apiPost<any>('/records', entry)
+      const id = created.id ?? String(created._id)
+      setEntries((prev) => [...prev, { ...entry, id }])
+    })()
   }, [])
 
   const updateEntry = useCallback((id: string, entry: Omit<ContentTrackerEntry, 'id'>) => {
-    setEntries((prev) => prev.map((e) => (e.id === id ? { ...entry, id } : e)))
+    ;(async () => {
+      await apiPatch<any>(`/records/${id}`, entry)
+      setEntries((prev) => prev.map((e) => (e.id === id ? { ...entry, id } : e)))
+    })()
   }, [])
 
   const deleteEntry = useCallback((id: string) => {
-    setEntries((prev) => prev.filter((e) => e.id !== id))
+    ;(async () => {
+      await apiDelete(`/records/${id}`)
+      setEntries((prev) => prev.filter((e) => e.id !== id))
+    })()
   }, [])
 
   const value = useMemo(
     () => ({
+      loading,
       categories,
       entries,
       addCategory,
@@ -101,6 +141,7 @@ export function ContentTrackerProvider({ children }: { children: ReactNode }) {
       deleteEntry,
     }),
     [
+      loading,
       categories,
       entries,
       addCategory,

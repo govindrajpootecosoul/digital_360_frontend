@@ -20,10 +20,13 @@ export type ContentTrackerEntry = {
   topic: string
   scripts: string
   hook: string
+  isOwn?: boolean
+  postLink?: string
   referenceLink: string
   views: number
   likes: number
-  comments: number
+  /** Count or free-form notes; stored as string. */
+  comments: string
 }
 
 export type ContentTrackerSeed = {

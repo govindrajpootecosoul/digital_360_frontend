@@ -1,17 +1,10 @@
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import seed from '../data/strategies.json'
 import type { StrategyCard } from '../types/data'
 import { StrategyLibraryContext } from './strategyLibraryContext'
+import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api'
 
-const STORAGE_KEY = 'influra-strategy-library-v1'
 const DEFAULT_STATUS: StrategyCard['status'] = 'WIP'
-
-function newId(): string {
-  const c = globalThis.crypto
-  if (c?.randomUUID) return `str-${c.randomUUID()}`
-  return `str-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-}
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
@@ -30,68 +23,101 @@ function normalizeStatus(raw?: string): StrategyCard['status'] {
   return DEFAULT_STATUS
 }
 
-function loadStrategies(): StrategyCard[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) {
-      return (seed as StrategyCard[]).map((s) => ({
-        ...s,
-        createdAt: normalizeCreatedAt((s as unknown as { createdAt?: string }).createdAt),
-        status: normalizeStatus((s as unknown as { status?: string }).status),
-      }))
-    }
-    const parsed = JSON.parse(raw) as unknown
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return (parsed as StrategyCard[]).map((s) => ({
-        ...s,
-        createdAt: normalizeCreatedAt((s as unknown as { createdAt?: string }).createdAt),
-        status: normalizeStatus((s as unknown as { status?: string }).status),
-      }))
-    }
-  } catch {
-    /* ignore */
-  }
-  return (seed as StrategyCard[]).map((s) => ({
-    ...s,
-    createdAt: normalizeCreatedAt((s as unknown as { createdAt?: string }).createdAt),
-    status: normalizeStatus((s as unknown as { status?: string }).status),
-  }))
-}
+type ListResponse<T> = { items: T[] }
 
 export function StrategyLibraryProvider({ children }: { children: ReactNode }) {
-  const [strategies, setStrategies] = useState<StrategyCard[]>(loadStrategies)
+  const [loading, setLoading] = useState(true)
+  const [strategies, setStrategies] = useState<StrategyCard[]>([])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(strategies))
-  }, [strategies])
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      try {
+        const res = await apiGet<ListResponse<any>>('/strategies?limit=200')
+        if (cancelled) return
+        setStrategies(
+          res.items.map((s) => ({
+            id: s.id ?? String(s._id),
+            category: s.category,
+            platform: s.platform,
+            hook: s.hook,
+            scriptPreview: s.scriptPreview,
+            referenceLink: s.referenceLink,
+            createdAt: normalizeCreatedAt(s.createdAt),
+            status: normalizeStatus(s.status),
+          })) satisfies StrategyCard[],
+        )
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const addStrategy = useCallback((s: Omit<StrategyCard, 'id' | 'createdAt'>) => {
-    setStrategies((prev) => [
-      ...prev,
-      { ...s, status: s.status ?? DEFAULT_STATUS, id: newId(), createdAt: todayIso() },
-    ])
+    ;(async () => {
+      const created = await apiPost<any>('/strategies', {
+        ...s,
+        status: s.status ?? DEFAULT_STATUS,
+        createdAt: todayIso(),
+      })
+      setStrategies((prev) => [
+        ...prev,
+        {
+          id: created.id ?? String(created._id),
+          category: created.category,
+          platform: created.platform,
+          hook: created.hook,
+          scriptPreview: created.scriptPreview,
+          referenceLink: created.referenceLink,
+          createdAt: normalizeCreatedAt(created.createdAt),
+          status: normalizeStatus(created.status),
+        },
+      ])
+    })()
   }, [])
 
   const updateStrategy = useCallback((id: string, s: Omit<StrategyCard, 'id' | 'createdAt'>) => {
-    setStrategies((prev) =>
-      prev.map((x) =>
-        x.id === id ? { ...s, id, createdAt: x.createdAt, status: s.status ?? x.status ?? DEFAULT_STATUS } : x,
-      ),
-    )
+    ;(async () => {
+      const updated = await apiPatch<any>(`/strategies/${id}`, s)
+      setStrategies((prev) =>
+        prev.map((x) =>
+          x.id === id
+            ? {
+                id,
+                category: updated.category ?? s.category,
+                platform: updated.platform ?? s.platform,
+                hook: updated.hook ?? s.hook,
+                scriptPreview: updated.scriptPreview ?? s.scriptPreview,
+                referenceLink: updated.referenceLink ?? s.referenceLink,
+                createdAt: x.createdAt,
+                status: normalizeStatus(updated.status ?? s.status ?? x.status ?? DEFAULT_STATUS),
+              }
+            : x,
+        ),
+      )
+    })()
   }, [])
 
   const deleteStrategy = useCallback((id: string) => {
-    setStrategies((prev) => prev.filter((x) => x.id !== id))
+    ;(async () => {
+      await apiDelete(`/strategies/${id}`)
+      setStrategies((prev) => prev.filter((x) => x.id !== id))
+    })()
   }, [])
 
   const value = useMemo(
     () => ({
+      loading,
       strategies,
       addStrategy,
       updateStrategy,
       deleteStrategy,
     }),
-    [strategies, addStrategy, updateStrategy, deleteStrategy],
+    [loading, strategies, addStrategy, updateStrategy, deleteStrategy],
   )
 
   return <StrategyLibraryContext.Provider value={value}>{children}</StrategyLibraryContext.Provider>

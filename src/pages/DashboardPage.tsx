@@ -9,12 +9,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import dashboardData from '../data/dashboard.json'
+import { useEffect, useState } from 'react'
 import { Badge } from '../components/ui/Badge'
 import { Card, CardHeader } from '../components/ui/Card'
 import type { ActivityItem, DashboardData } from '../types/data'
-
-const data = dashboardData as DashboardData
+import { apiGet } from '../lib/api'
 
 const activityTone = (t: ActivityItem['type']) => {
   switch (t) {
@@ -32,6 +31,30 @@ const activityTone = (t: ActivityItem['type']) => {
 }
 
 export function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const d = await apiGet<DashboardData>('/dashboard')
+      if (!cancelled) setData(d)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (!data) {
+    return (
+      <div>
+        <header className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Dashboard</h1>
+          <p className="mt-1 text-sm text-neutral-500">Loading…</p>
+        </header>
+      </div>
+    )
+  }
+
   return (
     <div>
       <header className="mb-8">

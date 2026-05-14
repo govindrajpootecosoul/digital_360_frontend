@@ -22,6 +22,27 @@ function strategyUrlForHook(hook: string): string {
 
 type EntryDialog = 'new' | ContentTrackerEntry | null
 
+/** YYYY-MM-DD only; otherwise empty (for `<input type="date" />`). */
+function dateForPicker(stored: string | undefined): string {
+  const v = (stored ?? '').trim()
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : ''
+}
+
+function dayFromIso(iso: string): string {
+  const v = iso.trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return ''
+  const [y, m, d] = v.split('-').map((x) => Number(x))
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  return dt.toLocaleDateString(undefined, { weekday: 'short' })
+}
+
+function formatCommentsDetail(comments: string): string {
+  const c = comments.trim()
+  if (!c || c === '—') return '—'
+  if (/^\d+$/.test(c)) return formatNumber(Number(c))
+  return c
+}
+
 export function ContentTrackerPage() {
   const { categories, entries, addCategory, addEntry, updateEntry, deleteEntry } = useContentTracker()
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(ALL)
@@ -106,9 +127,9 @@ export function ContentTrackerPage() {
         id: 'postLink',
         header: 'Post Link',
         cell: (r) =>
-          r.referenceLink ? (
+          r.postLink ? (
             <a
-              href={r.referenceLink}
+              href={r.postLink}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-sm text-neutral-700 underline-offset-2 hover:text-neutral-900 hover:underline"
@@ -216,6 +237,8 @@ export function ContentTrackerPage() {
                   'topic',
                   'scripts',
                   'hook',
+                  'isOwn',
+                  'postLink',
                   'referenceLink',
                   'views',
                   'likes',
@@ -421,7 +444,7 @@ function EntryFormModal({
   )
   const [subCategory, setSubCategory] = useState(() => initialEntry?.subCategory ?? '')
   const [country, setCountry] = useState(() => initialEntry?.country ?? '')
-  const [date, setDate] = useState(() => initialEntry?.date ?? '')
+  const [date, setDate] = useState(() => dateForPicker(initialEntry?.date))
   const [day, setDay] = useState(() => initialEntry?.day ?? '')
   const [contentType, setContentType] = useState(() => initialEntry?.contentType ?? '')
   const [campaignTheme, setCampaignTheme] = useState(() => initialEntry?.campaignTheme ?? '')
@@ -433,17 +456,21 @@ function EntryFormModal({
   const [topic, setTopic] = useState(() => initialEntry?.topic ?? '')
   const [scripts, setScripts] = useState(() => initialEntry?.scripts ?? '')
   const [hook, setHook] = useState(() => initialEntry?.hook ?? '')
+  const [isOwn, setIsOwn] = useState(() => Boolean(initialEntry?.isOwn ?? false))
+  const [postLink, setPostLink] = useState(() => initialEntry?.postLink ?? '')
   const [referenceLink, setReferenceLink] = useState(() => initialEntry?.referenceLink ?? 'https://example.com')
   const [views, setViews] = useState(() => String(initialEntry?.views ?? 0))
   const [likes, setLikes] = useState(() => String(initialEntry?.likes ?? 0))
-  const [comments, setComments] = useState(() => String(initialEntry?.comments ?? 0))
+  const [comments, setComments] = useState(() =>
+    initialEntry?.comments != null ? String(initialEntry.comments) : '',
+  )
 
   const reset = () => {
     if (initialEntry) {
       setCategoryId(initialEntry.categoryId)
       setSubCategory(initialEntry.subCategory)
       setCountry(initialEntry.country)
-      setDate(initialEntry.date)
+      setDate(dateForPicker(initialEntry.date))
       setDay(initialEntry.day)
       setContentType(initialEntry.contentType)
       setCampaignTheme(initialEntry.campaignTheme)
@@ -455,10 +482,12 @@ function EntryFormModal({
       setTopic(initialEntry.topic)
       setScripts(initialEntry.scripts)
       setHook(initialEntry.hook)
+      setIsOwn(Boolean(initialEntry.isOwn ?? false))
+      setPostLink(initialEntry.postLink ?? '')
       setReferenceLink(initialEntry.referenceLink)
       setViews(String(initialEntry.views))
       setLikes(String(initialEntry.likes))
-      setComments(String(initialEntry.comments))
+      setComments(initialEntry.comments != null ? String(initialEntry.comments) : '')
     } else {
       setCategoryId(defaultCategoryId || categories[0]?.id || '')
       setSubCategory('')
@@ -475,10 +504,12 @@ function EntryFormModal({
       setTopic('')
       setScripts('')
       setHook('')
+      setIsOwn(false)
+      setPostLink('')
       setReferenceLink('https://example.com')
       setViews('0')
       setLikes('0')
-      setComments('0')
+      setComments('')
     }
   }
 
@@ -511,7 +542,7 @@ function EntryFormModal({
                 categoryId: cid,
                 subCategory: subCategory.trim() || '—',
                 country: country.trim() || '—',
-                date: date.trim() || '—',
+                date: date.trim() ? date.trim() : '—',
                 day: day.trim() || '—',
                 contentType: contentType.trim() || '—',
                 campaignTheme: campaignTheme.trim() || '—',
@@ -523,10 +554,12 @@ function EntryFormModal({
                 topic: topic.trim() || '—',
                 scripts: scripts.trim() || '—',
                 hook: hook.trim(),
+                  isOwn,
+                  postLink: postLink.trim() || '',
                 referenceLink: referenceLink.trim() || 'https://example.com',
                 views: Number(views) || 0,
                 likes: Number(likes) || 0,
-                comments: Number(comments) || 0,
+                comments: comments.trim() || '—',
               })
             }}
             className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-95 active:opacity-90"
@@ -557,8 +590,21 @@ function EntryFormModal({
           <Field label="Sub category" value={subCategory} onChange={setSubCategory} placeholder="Surface care" />
           <Field label="Country" value={country} onChange={setCountry} placeholder="United States" />
           <Field label="Platform" value={platform} onChange={setPlatform} placeholder="TikTok" />
-          <Field label="Date" value={date} onChange={setDate} placeholder="2026-05-02" />
-          <Field label="Day" value={day} onChange={setDay} placeholder="Mon" />
+          <label className="block text-xs font-medium text-neutral-600">
+            Date
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => {
+                const v = e.target.value
+                setDate(v)
+                if (v) setDay(dayFromIso(v))
+                else setDay('')
+              }}
+              className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none focus:ring-2 focus:ring-neutral-900/5 [color-scheme:light]"
+            />
+          </label>
+          <Field label="Day" value={day} onChange={setDay} placeholder="Auto from date" />
           <Field label="Content type" value={contentType} onChange={setContentType} placeholder="TikTok Short" className="sm:col-span-2" />
           <Field label="Campaign theme" value={campaignTheme} onChange={setCampaignTheme} placeholder="Clean routines" className="sm:col-span-2" />
           <Field label="Idea" value={idea} onChange={setIdea} placeholder="Concept / outline" className="sm:col-span-2" />
@@ -568,6 +614,22 @@ function EntryFormModal({
           <Field label="Topic" value={topic} onChange={setTopic} className="sm:col-span-2" placeholder="Campaign angle" />
           <Field label="Scripts" value={scripts} onChange={setScripts} className="sm:col-span-2" placeholder="A — Outline" />
           <Field label="Hook" value={hook} onChange={setHook} className="sm:col-span-2" placeholder="Short hook line" />
+          <label className="flex items-center gap-2 text-xs font-medium text-neutral-700 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={isOwn}
+              onChange={(e) => setIsOwn(e.target.checked)}
+              className="h-4 w-4 rounded border-neutral-300 text-[var(--color-accent)]"
+            />
+            This is my own post
+          </label>
+          <Field
+            label="Post link"
+            value={postLink}
+            onChange={setPostLink}
+            className="sm:col-span-2"
+            placeholder="https://…"
+          />
           <Field
             label="Reference link"
             value={referenceLink}
@@ -575,9 +637,9 @@ function EntryFormModal({
             className="sm:col-span-2"
             placeholder="https://…"
           />
-          <Field label="Views" value={views} onChange={setViews} placeholder="0" />
-          <Field label="Likes" value={likes} onChange={setLikes} placeholder="0" />
-          <Field label="Comments" value={comments} onChange={setComments} placeholder="0" />
+          <Field label="Views" value={views} onChange={setViews} placeholder="0" digitsOnly />
+          <Field label="Likes" value={likes} onChange={setLikes} placeholder="0" digitsOnly />
+          <Field label="Comments" value={comments} onChange={setComments} placeholder="Notes or count" />
         </div>
       )}
     </Modal>
@@ -590,19 +652,26 @@ function Field({
   onChange,
   placeholder,
   className = '',
+  digitsOnly = false,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   placeholder: string
   className?: string
+  digitsOnly?: boolean
 }) {
   return (
     <label className={`block text-xs font-medium text-neutral-600 ${className}`}>
       {label}
       <input
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        inputMode={digitsOnly ? 'numeric' : undefined}
+        autoComplete={digitsOnly ? 'off' : undefined}
+        onChange={(e) => {
+          const raw = e.target.value
+          onChange(digitsOnly ? raw.replace(/\D/g, '') : raw)
+        }}
         placeholder={placeholder}
         className="mt-1 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm outline-none focus:ring-2 focus:ring-neutral-900/5"
       />
@@ -652,11 +721,15 @@ function ContentEntryDetailsPanel({
         </div>
         <Detail label="Topic" value={row.topic} />
         <Detail label="Scripts" value={row.scripts} />
+        <div className="grid grid-cols-2 gap-4">
+          <Detail label="Own post" value={row.isOwn ? 'Yes' : 'No'} />
+          <Detail label="Post link" value={row.postLink ?? ''} link />
+        </div>
         <Detail label="Reference link" value={row.referenceLink} link />
         <div className="grid grid-cols-3 gap-4">
           <Detail label="Views" value={formatNumber(row.views)} />
           <Detail label="Likes" value={formatNumber(row.likes)} />
-          <Detail label="Comments" value={formatNumber(row.comments)} />
+          <Detail label="Comments" value={formatCommentsDetail(row.comments)} />
         </div>
       </dl>
     </SidePanel>

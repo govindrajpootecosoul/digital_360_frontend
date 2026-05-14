@@ -12,6 +12,7 @@ import { useStrategyLibrary } from '../hooks/useStrategyLibrary'
 import type { StrategyCard } from '../types/data'
 import type { ContentTrackerEntry } from '../types/contentTracker'
 import { downloadCsv } from '../lib/csvDownload'
+import { formatShortDateFromIso } from '../lib/format'
 
 type Bucket = 'used' | 'unused'
 type ViewMode = 'cards' | 'table'
@@ -74,12 +75,18 @@ export function StrategyLibraryPage() {
   }, [entries])
 
   const used = useMemo(
-    () => filtered.filter((s) => usedHookSet.has(s.hook.trim().toLowerCase())),
+    () =>
+      filtered
+        .filter((s) => usedHookSet.has(s.hook.trim().toLowerCase()))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [filtered, usedHookSet],
   )
 
   const unused = useMemo(
-    () => filtered.filter((s) => !usedHookSet.has(s.hook.trim().toLowerCase())),
+    () =>
+      filtered
+        .filter((s) => !usedHookSet.has(s.hook.trim().toLowerCase()))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [filtered, usedHookSet],
   )
 
@@ -160,7 +167,15 @@ export function StrategyLibraryPage() {
             },
           ] as TableColumn<StrategyCard>[])
         : []),
-      { id: 'added', header: 'Added', cell: (s) => <span className="tabular-nums text-neutral-600">{s.createdAt}</span> },
+      {
+        id: 'added',
+        header: 'Added',
+        cell: (s) => (
+          <span className="text-neutral-600" title={s.createdAt}>
+            {formatShortDateFromIso(s.createdAt)}
+          </span>
+        ),
+      },
       {
         id: 'ref',
         header: 'Reference',
@@ -395,10 +410,12 @@ export function StrategyLibraryPage() {
                 topic: payload.topic,
                 scripts: payload.scripts,
                 hook: postTarget.hook,
+                isOwn: true,
+                postLink: payload.postLink?.trim() || '',
                 referenceLink: postTarget.referenceLink,
                 views: 0,
                 likes: 0,
-                comments: 0,
+                comments: '0',
               }
               addEntry(next)
             })
@@ -632,7 +649,9 @@ function StrategyGrid({
               <Badge tone="neutral">{s.status}</Badge>
             ) : null}
             <span className="text-xs text-neutral-400">·</span>
-            <span className="text-xs font-medium text-neutral-500">Added {s.createdAt}</span>
+            <span className="text-xs font-medium text-neutral-500" title={s.createdAt}>
+              Added {formatShortDateFromIso(s.createdAt)}
+            </span>
           </div>
           <h3 className="mt-4 text-base font-semibold tracking-tight text-neutral-900">{s.hook}</h3>
           <p className="mt-2 line-clamp-4 flex-1 text-sm leading-relaxed text-neutral-600">{s.scriptPreview}</p>
@@ -707,6 +726,7 @@ function PostItModal({
     postedDate: string
     day: string
     copy: string
+    postLink?: string
   }) => void
 }) {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(() => [strategy.platform].filter(Boolean))
@@ -720,6 +740,7 @@ function PostItModal({
   const [contentType, setContentType] = useState('')
   const [postedDate, setPostedDate] = useState(new Date().toISOString().slice(0, 10))
   const [copy, setCopy] = useState('')
+  const [postLink, setPostLink] = useState('')
 
   const platformOptions = useMemo(() => ['TikTok', 'Instagram', 'YouTube', 'X'], [])
   const day = useMemo(() => dayFromIso(postedDate), [postedDate])
@@ -766,6 +787,7 @@ function PostItModal({
                 postedDate: postedDate.trim(),
                 day,
                 copy: copy.trim() || '—',
+                postLink: postLink.trim(),
               })
             }
             className="rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
@@ -842,6 +864,13 @@ function PostItModal({
           onChange={setCopy}
           placeholder="Caption / copy"
           multiline
+          className="sm:col-span-2"
+        />
+        <Field
+          label="Post link (optional)"
+          value={postLink}
+          onChange={setPostLink}
+          placeholder="Paste your Instagram post URL after publishing"
           className="sm:col-span-2"
         />
 

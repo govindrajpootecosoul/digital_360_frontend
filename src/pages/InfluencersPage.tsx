@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import influencerData from '../data/influencers.json'
+import { useEffect, useMemo, useState } from 'react'
 import { DeleteIconButton, DownloadIconButton, EditIconButton } from '../components/ui/ActionIcons'
 import { Badge } from '../components/ui/Badge'
 import { statusTone } from '../lib/badgeTones'
@@ -13,15 +12,12 @@ import { PageToolbar, ToolbarSelect } from '../components/layout/PageToolbar'
 import { INFLUENCER_KANBAN_COLUMNS } from '../constants/kanban'
 import { formatFollowers } from '../lib/format'
 import { downloadCsv } from '../lib/csvDownload'
+import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api'
 import type { Influencer } from '../types/data'
 
-const seedRows = influencerData as Influencer[]
-
-const platforms = ['All', ...Array.from(new Set(seedRows.map((r) => r.platform)))]
-const categories = ['All', ...Array.from(new Set(seedRows.map((r) => r.category)))]
-
 export function InfluencersPage() {
-  const [rows, setRows] = useState<Influencer[]>(seedRows)
+  const [rows, setRows] = useState<Influencer[]>([])
+  const [loading, setLoading] = useState(true)
   const [view, setView] = useState<'table' | 'kanban'>('table')
   const [search, setSearch] = useState('')
   const [platform, setPlatform] = useState('All')
@@ -30,6 +26,25 @@ export function InfluencersPage() {
   const [editRow, setEditRow] = useState<Influencer | null>(null)
   const [deleteRow, setDeleteRow] = useState<Influencer | null>(null)
   const [activeRow, setActiveRow] = useState<Influencer | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      try {
+        const res = await apiGet<{ items: Influencer[] }>('/influencers?limit=200')
+        if (!cancelled) setRows(res.items)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const platforms = useMemo(() => ['All', ...Array.from(new Set(rows.map((r) => r.platform)))], [rows])
+  const categories = useMemo(() => ['All', ...Array.from(new Set(rows.map((r) => r.category)))], [rows])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -178,7 +193,7 @@ export function InfluencersPage() {
         <Table
           columns={columns}
           rows={filtered}
-          emptyMessage="No influencers match your filters."
+          emptyMessage={loading ? 'Loading…' : 'No influencers match your filters.'}
           onRowClick={(row) => setActiveRow(row)}
         />
       ) : (
@@ -194,7 +209,12 @@ export function InfluencersPage() {
       <AddInfluencerModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onSave={(next) => setRows((prev) => [next, ...prev])}
+        onSave={(next) => {
+          ;(async () => {
+            const created = await apiPost<Influencer>('/influencers', next)
+            setRows((prev) => [created, ...prev])
+          })()
+        }}
       />
 
       {editRow ? (
@@ -203,7 +223,10 @@ export function InfluencersPage() {
           row={editRow}
           onClose={() => setEditRow(null)}
           onSave={(next) => {
-            setRows((prev) => prev.map((r) => (r.id === next.id ? next : r)))
+            ;(async () => {
+              const updated = await apiPatch<Influencer>(`/influencers/${next.id}`, next)
+              setRows((prev) => prev.map((r) => (r.id === next.id ? updated : r)))
+            })()
             setEditRow(null)
           }}
         />
@@ -225,7 +248,11 @@ export function InfluencersPage() {
             <button
               type="button"
               onClick={() => {
-                if (deleteRow) setRows((prev) => prev.filter((r) => r.id !== deleteRow.id))
+                ;(async () => {
+                  if (!deleteRow) return
+                  await apiDelete(`/influencers/${deleteRow.id}`)
+                  setRows((prev) => prev.filter((r) => r.id !== deleteRow.id))
+                })()
                 setDeleteRow(null)
               }}
               className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-red-700"

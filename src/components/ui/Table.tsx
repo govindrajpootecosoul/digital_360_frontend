@@ -48,7 +48,15 @@ export function Table<T extends { id: string }>({
               <tr
                 key={row.id}
                 className={`transition-colors hover:bg-neutral-50/80 ${onRowClick ? 'cursor-pointer' : ''}`}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onClick={
+                  onRowClick
+                    ? (e) => {
+                        const t = e.target as HTMLElement
+                        if (t.closest('button, a, input, select, textarea, [role="button"]')) return
+                        onRowClick(row)
+                      }
+                    : undefined
+                }
               >
                 {columns.map((col) => (
                   <td
