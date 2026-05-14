@@ -5,7 +5,15 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig(({ command, mode, isPreview }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const proxyTarget = (env.API_PROXY_TARGET ?? '').trim().replace(/\/$/, '')
+  /** Prefer process.env so CI/Vercel dashboard vars apply even if .env files are missing. */
+  const proxyTarget = (
+    process.env.API_PROXY_TARGET ??
+    process.env.VITE_API_PROXY_TARGET ??
+    env.API_PROXY_TARGET ??
+    ''
+  )
+    .trim()
+    .replace(/\/$/, '')
 
   const isDevServer = command === 'serve' && !isPreview
 
