@@ -1,3 +1,5 @@
+import { getAccessToken } from './authStorage'
+
 /**
  * Base URL for `fetch` — set `VITE_API_URL` in `.env` (see `.env.example`).
  * - Dev: `/api` + `API_PROXY_TARGET` in `.env` uses the Vite proxy (no hardcoded host in code).
@@ -17,8 +19,29 @@ function apiBase(): string {
 /** Resolved API origin; in dev without .env this is `/api` (Vite proxy). */
 export const API_BASE = envBase || (import.meta.env.DEV ? '/api' : '')
 
+function authHeaders(): HeadersInit {
+  const token = getAccessToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+function mergeHeaders(extra?: HeadersInit): HeadersInit {
+  return { ...authHeaders(), ...extra }
+}
+
 async function readErrorBody(res: Response): Promise<string> {
   const t = await res.text().catch(() => '')
+  return t.length > 200 ? `${t.slice(0, 200)}…` : t
+}
+
+/** Prefer API `message` field when present (e.g. auth validation). */
+async function errorDetail(res: Response): Promise<string> {
+  const t = await res.text().catch(() => '')
+  try {
+    const j = JSON.parse(t) as { message?: string }
+    if (typeof j.message === 'string' && j.message.trim()) return j.message.trim()
+  } catch {
+    /* ignore */
+  }
   return t.length > 200 ? `${t.slice(0, 200)}…` : t
 }
 
@@ -35,7 +58,7 @@ function networkError(err: unknown, method: string, path: string): Error {
 export async function apiGet<T>(path: string): Promise<T> {
   let res: Response
   try {
-    res = await fetch(`${apiBase()}${path}`, { method: 'GET' })
+    res = await fetch(`${apiBase()}${path}`, { method: 'GET', headers: mergeHeaders() })
   } catch (e) {
     throw networkError(e, 'GET', path)
   }
@@ -48,14 +71,14 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   try {
     res = await fetch(`${apiBase()}${path}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: mergeHeaders({ 'content-type': 'application/json' }),
       body: JSON.stringify(body),
     })
   } catch (e) {
     throw networkError(e, 'POST', path)
   }
   if (!res.ok) {
-    const detail = await readErrorBody(res)
+    const detail = await errorDetail(res)
     throw new Error(detail ? `POST ${path} failed (${res.status}): ${detail}` : `POST ${path} failed: ${res.status}`)
   }
   return (await res.json()) as T
@@ -66,14 +89,14 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
   try {
     res = await fetch(`${apiBase()}${path}`, {
       method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
+      headers: mergeHeaders({ 'content-type': 'application/json' }),
       body: JSON.stringify(body),
     })
   } catch (e) {
     throw networkError(e, 'PATCH', path)
   }
   if (!res.ok) {
-    const detail = await readErrorBody(res)
+    const detail = await errorDetail(res)
     throw new Error(detail ? `PATCH ${path} failed (${res.status}): ${detail}` : `PATCH ${path} failed: ${res.status}`)
   }
   return (await res.json()) as T
@@ -82,13 +105,12 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
 export async function apiDelete(path: string): Promise<void> {
   let res: Response
   try {
-    res = await fetch(`${apiBase()}${path}`, { method: 'DELETE' })
+    res = await fetch(`${apiBase()}${path}`, { method: 'DELETE', headers: mergeHeaders() })
   } catch (e) {
     throw networkError(e, 'DELETE', path)
   }
   if (!res.ok) {
-    const detail = await readErrorBody(res)
+    const detail = await errorDetail(res)
     throw new Error(detail ? `DELETE ${path} failed (${res.status}): ${detail}` : `DELETE ${path} failed: ${res.status}`)
   }
 }
-

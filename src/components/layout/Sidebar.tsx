@@ -1,5 +1,6 @@
 import type { SVGProps } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 const nav = [
   { to: '/', label: 'Dashboard', icon: IconHome },
@@ -17,6 +18,7 @@ export function Sidebar({
   collapsed: boolean
   onToggle: () => void
 }) {
+  const { user, logout } = useAuth()
   const w = collapsed ? 'w-[72px]' : 'w-[248px]'
 
   return (
@@ -80,15 +82,41 @@ export function Sidebar({
       </nav>
       <div className={`border-t border-neutral-100 p-3 ${collapsed ? 'text-center' : ''}`}>
         {!collapsed ? (
-          <p className="text-[11px] leading-relaxed text-neutral-400">Mock data · No backend</p>
+          <div className="space-y-2">
+            <p className="truncate text-[11px] font-medium text-neutral-700" title={user?.email}>
+              {user?.displayName?.trim() ? user.displayName : user?.email}
+            </p>
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="w-full rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-[11px] font-medium text-neutral-700 transition hover:bg-neutral-50"
+            >
+              Log out
+            </button>
+          </div>
         ) : (
-          <span className="mx-auto block h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-emerald-100" title="Offline demo" />
+          <button
+            type="button"
+            onClick={() => logout()}
+            className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 ring-1 ring-neutral-200 transition hover:bg-neutral-100 hover:text-neutral-900"
+            title="Log out"
+            aria-label="Log out"
+          >
+            <IconLogOut className="h-4 w-4" />
+          </button>
         )}
       </div>
     </aside>
   )
 }
 
+function IconLogOut(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
+      <path strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" d="M15 12H4M10 8l-4 4 4 4M20 4v16" />
+    </svg>
+  )
+}
 function IconHome(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" {...props}>
