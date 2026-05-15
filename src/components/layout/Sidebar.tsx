@@ -20,6 +20,9 @@ export function Sidebar({
 }) {
   const { user, logout } = useAuth()
   const w = collapsed ? 'w-[72px]' : 'w-[248px]'
+  const displayName = user?.displayName?.trim()
+  const primaryLabel = displayName || user?.email
+  const showEmailBelow = Boolean(user?.email && displayName && displayName !== user.email)
 
   return (
     <aside
@@ -83,9 +86,16 @@ export function Sidebar({
       <div className={`border-t border-neutral-100 p-3 ${collapsed ? 'text-center' : ''}`}>
         {!collapsed ? (
           <div className="space-y-2">
-            <p className="truncate text-[11px] font-medium text-neutral-700" title={user?.email}>
-              {user?.displayName?.trim() ? user.displayName : user?.email}
-            </p>
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-medium text-neutral-700" title={primaryLabel}>
+                {primaryLabel}
+              </p>
+              {showEmailBelow ? (
+                <p className="truncate text-[10px] text-neutral-500" title={user.email}>
+                  {user.email}
+                </p>
+              ) : null}
+            </div>
             <button
               type="button"
               onClick={() => logout()}
