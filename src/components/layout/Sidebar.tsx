@@ -22,7 +22,9 @@ export function Sidebar({
   const w = collapsed ? 'w-[72px]' : 'w-[248px]'
   const displayName = user?.displayName?.trim()
   const primaryLabel = displayName || user?.email
-  const showEmailBelow = Boolean(user?.email && displayName && displayName !== user.email)
+  const showEmailBelow = Boolean(
+    user?.email && displayName && displayName !== user?.email,
+  )
 
   return (
     <aside
@@ -91,8 +93,8 @@ export function Sidebar({
                 {primaryLabel}
               </p>
               {showEmailBelow ? (
-                <p className="truncate text-[10px] text-neutral-500" title={user.email}>
-                  {user.email}
+                <p className="truncate text-[10px] text-neutral-500" title={user?.email}>
+                  {user?.email}
                 </p>
               ) : null}
             </div>
