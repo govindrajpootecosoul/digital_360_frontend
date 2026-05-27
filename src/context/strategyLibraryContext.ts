@@ -3,6 +3,7 @@ import type { StrategyCard } from '../types/data'
 
 export type StrategyLibraryContextValue = {
   loading: boolean
+  loadError: string | null
   strategies: StrategyCard[]
   addStrategy: (s: Omit<StrategyCard, 'id' | 'createdAt'>) => void
   updateStrategy: (id: string, s: Omit<StrategyCard, 'id' | 'createdAt'>) => void

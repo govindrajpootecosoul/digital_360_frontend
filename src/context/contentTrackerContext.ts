@@ -3,6 +3,7 @@ import type { ContentTrackerEntry, ContentTrackerSeed } from '../types/contentTr
 
 export type ContentTrackerContextValue = ContentTrackerSeed & {
   loading: boolean
+  loadError: string | null
   addCategory: (name: string) => Promise<void>
   updateCategory: (id: string, name: string) => Promise<void>
   deleteCategory: (id: string) => Promise<void>

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { StrategyCard } from '../types/data'
 import { StrategyLibraryContext } from './strategyLibraryContext'
 import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api'
+import { getErrorMessage } from '../lib/apiErrors'
 
 const DEFAULT_STATUS: StrategyCard['status'] = 'WIP'
 
@@ -27,12 +28,14 @@ type ListResponse<T> = { items: T[] }
 
 export function StrategyLibraryProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [strategies, setStrategies] = useState<StrategyCard[]>([])
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError(null)
       try {
         const res = await apiGet<ListResponse<any>>('/strategies?limit=200')
         if (cancelled) return
@@ -48,6 +51,8 @@ export function StrategyLibraryProvider({ children }: { children: ReactNode }) {
             status: normalizeStatus(s.status),
           })) satisfies StrategyCard[],
         )
+      } catch (e) {
+        if (!cancelled) setLoadError(getErrorMessage(e, 'Could not load strategies.'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -112,12 +117,13 @@ export function StrategyLibraryProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       loading,
+      loadError,
       strategies,
       addStrategy,
       updateStrategy,
       deleteStrategy,
     }),
-    [loading, strategies, addStrategy, updateStrategy, deleteStrategy],
+    [loading, loadError, strategies, addStrategy, updateStrategy, deleteStrategy],
   )
 
   return <StrategyLibraryContext.Provider value={value}>{children}</StrategyLibraryContext.Provider>

@@ -44,7 +44,8 @@ function formatCommentsDetail(comments: string): string {
 }
 
 export function ContentTrackerPage() {
-  const { categories, entries, addCategory, addEntry, updateEntry, deleteEntry } = useContentTracker()
+  const { categories, entries, loadError, addCategory, addEntry, updateEntry, deleteEntry } =
+    useContentTracker()
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(ALL)
   const [search, setSearch] = useState('')
   const [country, setCountry] = useState<string>(ALL)
@@ -187,6 +188,11 @@ export function ContentTrackerPage() {
 
   return (
     <div>
+      {loadError ? (
+        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          {loadError}
+        </p>
+      ) : null}
       <PageToolbar
         title="Content tracker"
         subtitle="Filter by category, then open a hook in Strategy library to manage its script."

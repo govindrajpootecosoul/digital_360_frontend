@@ -14,6 +14,7 @@ import { Badge } from '../components/ui/Badge'
 import { Card, CardHeader } from '../components/ui/Card'
 import type { ActivityItem, DashboardData } from '../types/data'
 import { apiGet } from '../lib/api'
+import { getErrorMessage } from '../lib/apiErrors'
 
 const activityTone = (t: ActivityItem['type']) => {
   switch (t) {
@@ -32,24 +33,47 @@ const activityTone = (t: ActivityItem['type']) => {
 
 export function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const d = await apiGet<DashboardData>('/dashboard')
-      if (!cancelled) setData(d)
+      setLoading(true)
+      setError(null)
+      try {
+        const d = await apiGet<DashboardData>('/dashboard')
+        if (!cancelled) setData(d)
+      } catch (e) {
+        if (!cancelled) setError(getErrorMessage(e, 'Could not load dashboard.'))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     })()
     return () => {
       cancelled = true
     }
   }, [])
 
-  if (!data) {
+  if (loading) {
     return (
       <div>
         <header className="mb-8">
           <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Dashboard</h1>
           <p className="mt-1 text-sm text-neutral-500">Loading…</p>
+        </header>
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div>
+        <header className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Dashboard</h1>
+          <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+            {error ?? 'Could not load dashboard.'}
+          </p>
         </header>
       </div>
     )

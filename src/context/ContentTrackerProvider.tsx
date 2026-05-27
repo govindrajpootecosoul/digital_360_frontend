@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ContentCategory, ContentTrackerEntry } from '../types/contentTracker'
 import { ContentTrackerContext } from './contentTrackerContext'
 import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api'
+import { getErrorMessage } from '../lib/apiErrors'
 
 type ListResponse<T> = { items: T[] }
 
@@ -20,6 +21,7 @@ type ContentTrackerProviderProps = {
 
 export function ContentTrackerProvider({ children, categoriesOnly = false }: ContentTrackerProviderProps) {
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [categories, setCategories] = useState<ContentCategory[]>([])
   const [entries, setEntries] = useState<ContentTrackerEntry[]>([])
 
@@ -27,6 +29,7 @@ export function ContentTrackerProvider({ children, categoriesOnly = false }: Con
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError(null)
       try {
         const cats = await apiGet<ListResponse<{ id: string; name: string }>>('/content/categories')
         if (cancelled) return
@@ -71,6 +74,8 @@ export function ContentTrackerProvider({ children, categoriesOnly = false }: Con
             comments: r.comments != null ? String(r.comments) : '0',
           })) satisfies ContentTrackerEntry[],
         )
+      } catch (e) {
+        if (!cancelled) setLoadError(getErrorMessage(e, 'Could not load content tracker data.'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -140,6 +145,7 @@ export function ContentTrackerProvider({ children, categoriesOnly = false }: Con
   const value = useMemo(
     () => ({
       loading,
+      loadError,
       categories,
       entries,
       addCategory,
@@ -151,6 +157,7 @@ export function ContentTrackerProvider({ children, categoriesOnly = false }: Con
     }),
     [
       loading,
+      loadError,
       categories,
       entries,
       addCategory,

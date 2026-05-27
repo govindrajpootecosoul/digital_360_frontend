@@ -1,4 +1,5 @@
 import { getAccessToken } from './authStorage'
+import { parseApiErrorResponse } from './apiErrors'
 import { dedupeGet } from './apiGetDedupe'
 
 /**
@@ -22,18 +23,6 @@ function mergeHeaders(extra?: HeadersInit): HeadersInit {
   return { ...authHeaders(), ...extra }
 }
 
-/** Prefer API `message` field when present (e.g. auth validation). */
-async function errorDetail(res: Response): Promise<string> {
-  const t = await res.text().catch(() => '')
-  try {
-    const j = JSON.parse(t) as { message?: string }
-    if (typeof j.message === 'string' && j.message.trim()) return j.message.trim()
-  } catch {
-    /* ignore */
-  }
-  return t.length > 200 ? `${t.slice(0, 200)}…` : t
-}
-
 function networkError(err: unknown, method: string, path: string): Error {
   const msg = err instanceof Error ? err.message : String(err)
   if (msg === 'Failed to fetch' || err instanceof TypeError) {
@@ -44,65 +33,48 @@ function networkError(err: unknown, method: string, path: string): Error {
   return err instanceof Error ? err : new Error(msg)
 }
 
+async function parseJson<T>(res: Response): Promise<T> {
+  const text = await res.text()
+  if (!text) return undefined as T
+  return JSON.parse(text) as T
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const url = `${apiBase()}${path}`
+  let res: Response
+  try {
+    res = await fetch(url, {
+      method,
+      headers: mergeHeaders(body !== undefined ? { 'content-type': 'application/json' } : undefined),
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+  } catch (e) {
+    throw networkError(e, method, path)
+  }
+
+  if (!res.ok) {
+    throw await parseApiErrorResponse(res)
+  }
+
+  if (res.status === 204) return undefined as T
+  return parseJson<T>(res)
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const url = `${apiBase()}${path}`
-  return dedupeGet<T>(url, async () => {
-    let res: Response
-    try {
-      res = await fetch(url, { method: 'GET', headers: mergeHeaders() })
-    } catch (e) {
-      throw networkError(e, 'GET', path)
-    }
-    if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`)
-    return (await res.json()) as T
-  })
+  return dedupeGet<T>(url, () => request<T>('GET', path))
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  let res: Response
-  try {
-    res = await fetch(`${apiBase()}${path}`, {
-      method: 'POST',
-      headers: mergeHeaders({ 'content-type': 'application/json' }),
-      body: JSON.stringify(body),
-    })
-  } catch (e) {
-    throw networkError(e, 'POST', path)
-  }
-  if (!res.ok) {
-    const detail = await errorDetail(res)
-    throw new Error(detail ? `POST ${path} failed (${res.status}): ${detail}` : `POST ${path} failed: ${res.status}`)
-  }
-  return (await res.json()) as T
+  return request<T>('POST', path, body)
 }
 
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
-  let res: Response
-  try {
-    res = await fetch(`${apiBase()}${path}`, {
-      method: 'PATCH',
-      headers: mergeHeaders({ 'content-type': 'application/json' }),
-      body: JSON.stringify(body),
-    })
-  } catch (e) {
-    throw networkError(e, 'PATCH', path)
-  }
-  if (!res.ok) {
-    const detail = await errorDetail(res)
-    throw new Error(detail ? `PATCH ${path} failed (${res.status}): ${detail}` : `PATCH ${path} failed: ${res.status}`)
-  }
-  return (await res.json()) as T
+  return request<T>('PATCH', path, body)
 }
 
 export async function apiDelete(path: string): Promise<void> {
-  let res: Response
-  try {
-    res = await fetch(`${apiBase()}${path}`, { method: 'DELETE', headers: mergeHeaders() })
-  } catch (e) {
-    throw networkError(e, 'DELETE', path)
-  }
-  if (!res.ok) {
-    const detail = await errorDetail(res)
-    throw new Error(detail ? `DELETE ${path} failed (${res.status}): ${detail}` : `DELETE ${path} failed: ${res.status}`)
-  }
+  await request<void>('DELETE', path)
 }
+
+export { ApiError, getErrorMessage } from './apiErrors'

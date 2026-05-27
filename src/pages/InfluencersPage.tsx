@@ -13,11 +13,14 @@ import { INFLUENCER_KANBAN_COLUMNS } from '../constants/kanban'
 import { formatFollowers } from '../lib/format'
 import { downloadCsv } from '../lib/csvDownload'
 import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api'
+import { getErrorMessage } from '../lib/apiErrors'
 import type { Influencer } from '../types/data'
 
 export function InfluencersPage() {
   const [rows, setRows] = useState<Influencer[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [view, setView] = useState<'table' | 'kanban'>('table')
   const [search, setSearch] = useState('')
   const [platform, setPlatform] = useState('All')
@@ -31,9 +34,12 @@ export function InfluencersPage() {
     let cancelled = false
     ;(async () => {
       setLoading(true)
+      setLoadError(null)
       try {
         const res = await apiGet<{ items: Influencer[] }>('/influencers?limit=200')
         if (!cancelled) setRows(res.items)
+      } catch (e) {
+        if (!cancelled) setLoadError(getErrorMessage(e, 'Could not load influencers.'))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -104,6 +110,11 @@ export function InfluencersPage() {
 
   return (
     <div>
+      {(loadError || actionError) ? (
+        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          {loadError ?? actionError}
+        </p>
+      ) : null}
       <PageToolbar
         title="Influencer Manager"
         subtitle="CRM — table and board views with shared filters."
@@ -211,8 +222,14 @@ export function InfluencersPage() {
         onClose={() => setModalOpen(false)}
         onSave={(next) => {
           ;(async () => {
-            const created = await apiPost<Influencer>('/influencers', next)
-            setRows((prev) => [created, ...prev])
+            setActionError(null)
+            try {
+              const created = await apiPost<Influencer>('/influencers', next)
+              setRows((prev) => [created, ...prev])
+              setModalOpen(false)
+            } catch (e) {
+              setActionError(getErrorMessage(e, 'Could not add influencer.'))
+            }
           })()
         }}
       />
@@ -224,10 +241,15 @@ export function InfluencersPage() {
           onClose={() => setEditRow(null)}
           onSave={(next) => {
             ;(async () => {
-              const updated = await apiPatch<Influencer>(`/influencers/${next.id}`, next)
-              setRows((prev) => prev.map((r) => (r.id === next.id ? updated : r)))
+              setActionError(null)
+              try {
+                const updated = await apiPatch<Influencer>(`/influencers/${next.id}`, next)
+                setRows((prev) => prev.map((r) => (r.id === next.id ? updated : r)))
+                setEditRow(null)
+              } catch (e) {
+                setActionError(getErrorMessage(e, 'Could not update influencer.'))
+              }
             })()
-            setEditRow(null)
           }}
         />
       ) : null}
@@ -250,10 +272,15 @@ export function InfluencersPage() {
               onClick={() => {
                 ;(async () => {
                   if (!deleteRow) return
-                  await apiDelete(`/influencers/${deleteRow.id}`)
-                  setRows((prev) => prev.filter((r) => r.id !== deleteRow.id))
+                  setActionError(null)
+                  try {
+                    await apiDelete(`/influencers/${deleteRow.id}`)
+                    setRows((prev) => prev.filter((r) => r.id !== deleteRow.id))
+                    setDeleteRow(null)
+                  } catch (e) {
+                    setActionError(getErrorMessage(e, 'Could not delete influencer.'))
+                  }
                 })()
-                setDeleteRow(null)
               }}
               className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-red-700"
             >

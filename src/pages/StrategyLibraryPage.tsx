@@ -20,7 +20,7 @@ type StrategyStatus = StrategyCard['status']
 const STATUS_OPTIONS: StrategyStatus[] = ['Approved', 'Under Review', 'WIP', 'Rejected']
 
 export function StrategyLibraryPage() {
-  const { strategies, addStrategy, updateStrategy, deleteStrategy } = useStrategyLibrary()
+  const { strategies, loadError, addStrategy, updateStrategy, deleteStrategy } = useStrategyLibrary()
   const { entries, categories: contentCategories, addEntry } = useContentTracker()
   const [searchParams, setSearchParams] = useSearchParams()
   const hookFilter = searchParams.get('hook') ?? ''
@@ -229,6 +229,11 @@ export function StrategyLibraryPage() {
 
   return (
     <div>
+      {loadError ? (
+        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          {loadError}
+        </p>
+      ) : null}
       <PageToolbar
         title="Strategy library"
         subtitle="Reusable hooks and scripts — curated for your team."
