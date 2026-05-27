@@ -21,21 +21,36 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route element={<RequireAuth />}>
-            <Route
-              element={
-                <ContentTrackerProvider>
-                  <StrategyLibraryProvider>
-                    <AppLayout />
-                  </StrategyLibraryProvider>
-                </ContentTrackerProvider>
-              }
-            >
+            <Route element={<AppLayout />}>
               <Route index element={<DashboardPage />} />
               <Route path="influencers" element={<InfluencersPage />} />
               <Route path="outreach" element={<OutreachPage />} />
-              <Route path="content" element={<ContentTrackerPage />} />
-              <Route path="strategy" element={<StrategyLibraryPage />} />
-              <Route path="settings" element={<SettingsPage />} />
+              <Route
+                path="content"
+                element={
+                  <ContentTrackerProvider>
+                    <ContentTrackerPage />
+                  </ContentTrackerProvider>
+                }
+              />
+              <Route
+                path="strategy"
+                element={
+                  <ContentTrackerProvider>
+                    <StrategyLibraryProvider>
+                      <StrategyLibraryPage />
+                    </StrategyLibraryProvider>
+                  </ContentTrackerProvider>
+                }
+              />
+              <Route
+                path="settings"
+                element={
+                  <ContentTrackerProvider categoriesOnly>
+                    <SettingsPage />
+                  </ContentTrackerProvider>
+                }
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Route>

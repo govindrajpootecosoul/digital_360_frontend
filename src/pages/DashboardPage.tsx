@@ -60,7 +60,7 @@ export function DashboardPage() {
       <header className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Dashboard</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Pipeline health, growth, and the latest moves across Digital 360.
+          Team-wide pipeline health, growth, and latest activity across all accounts.
         </p>
       </header>
 
@@ -142,7 +142,7 @@ export function DashboardPage() {
 
       <section className="mt-8">
         <Card padding="p-5">
-          <CardHeader title="Recent activity" subtitle="What changed across your workspace" />
+          <CardHeader title="Recent activity" subtitle="Latest updates from all team accounts" />
           <ul className="divide-y divide-neutral-100">
             {data.activity.map((a) => (
               <li key={a.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">

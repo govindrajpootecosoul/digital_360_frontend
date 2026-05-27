@@ -12,7 +12,13 @@ function categoryIdFromApi(row: { id?: unknown; _id?: unknown }): string {
   return ''
 }
 
-export function ContentTrackerProvider({ children }: { children: ReactNode }) {
+type ContentTrackerProviderProps = {
+  children: ReactNode
+  /** Settings: load category names only (skip heavy records list). */
+  categoriesOnly?: boolean
+}
+
+export function ContentTrackerProvider({ children, categoriesOnly = false }: ContentTrackerProviderProps) {
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<ContentCategory[]>([])
   const [entries, setEntries] = useState<ContentTrackerEntry[]>([])
@@ -22,10 +28,7 @@ export function ContentTrackerProvider({ children }: { children: ReactNode }) {
     ;(async () => {
       setLoading(true)
       try {
-        const [cats, recs] = await Promise.all([
-          apiGet<ListResponse<{ id: string; name: string }>>('/content/categories'),
-          apiGet<ListResponse<any>>('/records?limit=200'),
-        ])
+        const cats = await apiGet<ListResponse<{ id: string; name: string }>>('/content/categories')
         if (cancelled) return
         setCategories(
           cats.items
@@ -36,6 +39,12 @@ export function ContentTrackerProvider({ children }: { children: ReactNode }) {
             })
             .filter((c): c is ContentCategory => c != null),
         )
+        if (categoriesOnly) {
+          setEntries([])
+          return
+        }
+        const recs = await apiGet<ListResponse<any>>('/records?limit=200')
+        if (cancelled) return
         setEntries(
           recs.items.map((r) => ({
             id: r.id ?? String(r._id),
@@ -69,7 +78,7 @@ export function ContentTrackerProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [categoriesOnly])
 
   const addCategory = useCallback((name: string): Promise<void> => {
     const trimmed = name.trim()

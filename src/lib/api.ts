@@ -1,4 +1,5 @@
 import { getAccessToken } from './authStorage'
+import { dedupeGet } from './apiGetDedupe'
 
 /**
  * API base for `fetch` — set at build/dev time from `API_PROXY_TARGET` in `.env` (see `.env.example`).
@@ -44,14 +45,17 @@ function networkError(err: unknown, method: string, path: string): Error {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  let res: Response
-  try {
-    res = await fetch(`${apiBase()}${path}`, { method: 'GET', headers: mergeHeaders() })
-  } catch (e) {
-    throw networkError(e, 'GET', path)
-  }
-  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`)
-  return (await res.json()) as T
+  const url = `${apiBase()}${path}`
+  return dedupeGet<T>(url, async () => {
+    let res: Response
+    try {
+      res = await fetch(url, { method: 'GET', headers: mergeHeaders() })
+    } catch (e) {
+      throw networkError(e, 'GET', path)
+    }
+    if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`)
+    return (await res.json()) as T
+  })
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
